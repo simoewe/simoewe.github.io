@@ -1,4 +1,6 @@
 Analyse containerlogistischer Trends im Kontext von IoT und Data Science
+
+
 🔍 Projektüberblick
 Dieses Repository dokumentiert ein Masterprojekt im Studiengang Wirtschaftsinformatik an der University of Hamburg Business School, Institut für Wirtschaftsinformatik, betreut durch Dr. Robert Stahlbock. Ziel des Projekts ist es, technologische Entwicklungen im Bereich der Containerlogistik unter besonderer Berücksichtigung von IoT- und Data-Science-Anwendungen zu untersuchen.
 
@@ -17,23 +19,23 @@ Der entwickelte Prototyp dient der Analyse containerlogistikbezogener Inhalte au
 Der Ablauf gliedert sich in folgende Phasen:
 
 1. Beschaffung
-Sammlung relevanter PDF-Dokumente und Texte
+- Sammlung relevanter PDF-Dokumente und Texte
 
-Nutzung von öffentlich verfügbaren Quellen
+- Nutzung von öffentlich verfügbaren Quellen
 
 2. Preprocessing
-PDF-to-Text-Konvertierung
+- PDF-to-Text-Konvertierung
 
-HTML-Tag-Entfernung
+- HTML-Tag-Entfernung
 
-Stopword-Entfernung
+- Stopword-Entfernung
 
-Lemmatisierung
+- Lemmatisierung
 
 3. Analyse
-Visualisierung (Word-Clouds, Häufigkeitsdiagramme)
+- Visualisierung (Word-Clouds, Häufigkeitsdiagramme)
 
-Synthese und Strukturierung der Themen
+- Synthese und Strukturierung der Themen
 
 4. Merkmalextraktion
 BERT-Modelle für semantische Analyse
