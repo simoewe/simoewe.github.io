@@ -2,19 +2,19 @@ Analyse containerlogistischer Trends im Kontext von IoT und Data Science
 
 
 🔍 Projektüberblick
-Dieses Repository dokumentiert ein Masterprojekt im Studiengang Wirtschaftsinformatik an der University of Hamburg Business School, Institut für Wirtschaftsinformatik, betreut durch Dr. Robert Stahlbock. Ziel des Projekts ist es, technologische Entwicklungen im Bereich der Containerlogistik unter besonderer Berücksichtigung von IoT- und Data-Science-Anwendungen zu untersuchen.
+- Dieses Repository dokumentiert ein Masterprojekt im Studiengang Wirtschaftsinformatik an der University of Hamburg Business School, Institut für Wirtschaftsinformatik, betreut durch Dr. Robert Stahlbock. Ziel des Projekts ist es, technologische Entwicklungen im Bereich der Containerlogistik unter besonderer Berücksichtigung von IoT- und Data-Science-Anwendungen zu untersuchen.
 
 🎯 Forschungsfragen
-Welche aktuellen technologischen Entwicklungen prägen die Containerlogistik im Kontext von IoT und Data Science?
+1. Welche aktuellen technologischen Entwicklungen prägen die Containerlogistik im Kontext von IoT und Data Science?
 – Stichworte: Smart Ports, digitale Supply Chains, Automatisierung.
 
-Welche Chancen und Risiken ergeben sich aus der Integration von IoT- und Data-Science-Anwendungen in containerlogistische Prozesse?
+2. Welche Chancen und Risiken ergeben sich aus der Integration von IoT- und Data-Science-Anwendungen in containerlogistische Prozesse?
 – Stichworte: Cybersicherheit, globale Abhängigkeiten, Zölle.
 
-Inwiefern führt der technologische Wandel zu neuen Abhängigkeiten in globalen Lieferketten?
+3. Inwiefern führt der technologische Wandel zu neuen Abhängigkeiten in globalen Lieferketten?
 
 🛠️ Ziel des Prototyps
-Der entwickelte Prototyp dient der Analyse containerlogistikbezogener Inhalte auf Basis öffentlich zugänglicher Quellen wie Jahresberichte, Nachhaltigkeitsberichte, News-Artikeln etc.
+- Der entwickelte Prototyp dient der Analyse containerlogistikbezogener Inhalte auf Basis öffentlich zugänglicher Quellen wie Jahresberichte, Nachhaltigkeitsberichte, News-Artikeln etc.
 
 Der Ablauf gliedert sich in folgende Phasen:
 
@@ -38,11 +38,11 @@ Der Ablauf gliedert sich in folgende Phasen:
 - Synthese und Strukturierung der Themen
 
 4. Merkmalextraktion
-BERT-Modelle für semantische Analyse
+- BERT-Modelle für semantische Analyse
 
-Statistische Häufigkeitsanalyse
+- Statistische Häufigkeitsanalyse
 
-Manuelle Schlagwortanalyse
+- Manuelle Schlagwortanalyse
 
 📁 Verzeichnisstruktur
 tbd
@@ -55,13 +55,13 @@ TBD
 ....
 
 👤 Betreuung
-Betreuer & Erstgutachter: Dr. Robert Stahlbock
+- Betreuer & Erstgutachter: Dr. Robert Stahlbock
 
-Studiengang: Wirtschaftsinformatik
+- Studiengang: Wirtschaftsinformatik
 
-Fakultät: University of Hamburg Business School
+- Fakultät: University of Hamburg Business School
 
-Institut: Institut für Wirtschaftsinformatik
+- Institut: Institut für Wirtschaftsinformatik
 
 📄 Lizenz
-Dieses Projekt steht ausschließlich zu Forschungszwecken im Rahmen des Masterstudiums zur Verfügung. Keine kommerzielle Nutzung erlaubt.
+- Dieses Projekt steht ausschließlich zu Forschungszwecken im Rahmen des Masterstudiums zur Verfügung. Keine kommerzielle Nutzung erlaubt.
