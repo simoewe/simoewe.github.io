@@ -1,71 +1,149 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Projektarbeit: Stahlbock</title>
+    <title>Textanalyse-Tool</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f4;
-            color: #333;
-        }
-        header {
-            background-color: #1e90ff;
-            color: white;
-            padding: 2rem 1rem;
-            text-align: center;
-        }
-        main {
-            max-width: 800px;
-            margin: 2rem auto;
-            padding: 1rem;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        h1, h2 {
-            color: #1e90ff;
-        }
-        footer {
-            text-align: center;
-            padding: 1rem;
-            font-size: 0.9rem;
-            color: #777;
-        }
+        body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
+        .container { max-width: 520px; margin: 40px auto; background: #fff; padding: 30px 40px 40px 40px; border-radius: 12px; box-shadow: 0 2px 12px rgba(226,0,26,0.08); border-top: 8px solid #e2001a; }
+        h2 { text-align: center; color: #e2001a; letter-spacing: 1px; margin-bottom: 10px; }
+        label { display: block; margin-top: 20px; color: #b10016; font-weight: bold; }
+        input[type="text"], input[type="file"] { width: 100%; padding: 10px; margin-top: 8px; border: 1.5px solid #e2001a; border-radius: 6px; background: #f9f9fa; font-size: 16px; }
+        button { margin-top: 25px; width: 100%; padding: 13px; background: linear-gradient(90deg, #e2001a 80%, #b10016 100%); color: #fff; border: none; border-radius: 6px; font-size: 18px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 8px rgba(226,0,26,0.08); transition: background 0.2s; }
+        button:hover { background: linear-gradient(90deg, #b10016 80%, #e2001a 100%); }
+        .wordcloud { margin-top: 30px; text-align: center; }
+        .error { color: #e2001a; text-align: center; margin-top: 20px; font-weight: bold; }
+        /* Neue Styles für die Listen */
+        .freq-list { display: flex; flex-direction: column; align-items: center; margin: 0; padding: 0; }
+        .freq-list li { background: #fff3f5; margin: 6px 0; padding: 10px 22px; border-radius: 8px; font-size: 18px; color: #b10016; box-shadow: 0 1px 4px rgba(226,0,26,0.06); min-width: 200px; text-align: left; border-left: 5px solid #e2001a; }
+        .freq-list li b { color: #e2001a; }
+        .totalcount-box { margin-top: 18px; background: #e2001a; color: #fff; font-size: 22px; border-radius: 10px; padding: 12px 0; font-weight: bold; box-shadow: 0 1px 6px rgba(226,0,26,0.10); letter-spacing: 1px; }
+        /* Ladebalken UHH-Style */
+        #progressbar-container { width:100%; background:#ffe5ea; border-radius:8px; height:20px; margin-bottom:10px; border: 1.5px solid #e2001a; }
+        #progressbar { height:100%; width:0%; background: linear-gradient(90deg, #e2001a 80%, #b10016 100%); border-radius:8px; transition: width 0.2s; }
+        #livecounter { font-size:16px; color:#b10016; font-weight:bold; }
+        /* Logo-Optimierung */
+        .container img { margin-bottom: 18px; background: #fff; border-radius: 8px; box-shadow: 0 1px 6px rgba(226,0,26,0.10); padding: 8px; }
     </style>
 </head>
 <body>
-    <header>
-        <h1>Projektarbeit: Stahlbock</h1>
-        <p>Ein Einblick in mein technisches Projekt</p>
-    </header>
-    <main>
-        <h2>Worum geht es?</h2>
-        <p>
-            In dieser Projektarbeit beschäftige ich mich mit der Konstruktion und Umsetzung eines sogenannten Stahlbocks. 
-            Ziel des Projekts ist es, eine tragfähige und stabile Vorrichtung zu planen, zu berechnen und zu fertigen.
-        </p>
-
-        <h2>Inhalte des Projekts</h2>
-        <ul>
-            <li>Planung und technische Zeichnung</li>
-            <li>Materialauswahl und Statikberechnung</li>
-            <li>Fertigungsschritte und Montage</li>
-            <li>Reflexion und Fazit</li>
-        </ul>
-
-        <h2>Veröffentlichung</h2>
-        <p>
-            Die vollständige Dokumentation und Bilder zum Projekt folgen in Kürze hier auf der Seite.
-            Bleib dran!
-        </p>
-    </main>
-    <footer>
-        &copy; 2025 Dein Name – Projekt Stahlbock
-    </footer>
+<div class="container">
+    <img src="https://www.uni-hamburg.de/16809753/uhh-logo-insert-6a9742755df2ab4c64c62c24740883d1dbab4529.png" alt="Universität Hamburg Logo" style="display:block; margin:0 auto 18px auto; max-width:180px; height:auto;">
+    <h2>Textanalyse-Tool</h2>
+    <form id="analyzeForm">
+        <label for="buzzwords">Suchbegriffe (kommagetrennt):</label>
+        <input type="text" id="buzzwords" name="buzzwords" required placeholder="z.B. KI, Daten, Analyse">
+        <label for="file">Datei hochladen (PDF, DOCX, TXT):</label>
+        <input type="file" id="file" name="file" accept=".pdf,.docx,.txt" required>
+        <button type="submit">Analysieren & Wortwolke erstellen</button>
+    </form>
+    <div class="error" id="error"></div>
+    <div class="wordcloud" id="wordcloud"></div>
+    <div class="wordcloud" id="loading" style="display:none; color:#007bff; font-size:18px;">
+        <div style="margin-bottom:10px;">Bitte warten, die Analyse läuft...</div>
+        <div id="progressbar-container" style="width:100%; background:#e0e0e0; border-radius:6px; height:18px; margin-bottom:8px;">
+            <div id="progressbar" style="height:100%; width:0%; background:#007bff; border-radius:6px;"></div>
+        </div>
+        <div id="livecounter" style="font-size:16px; color:#b10016; font-weight:bold;">Analysierte Wörter: <span id="counter-value">0</span></div>
+    </div>
+    <div class="wordcloud" id="frequencies"></div>
+    <div class="wordcloud" id="totalcount"></div>
+</div>
+<script>
+        const form = document.getElementById('analyzeForm');
+        const wordcloudDiv = document.getElementById('wordcloud');
+        const errorDiv = document.getElementById('error');
+        const loadingDiv = document.getElementById('loading');
+        const frequenciesDiv = document.getElementById('frequencies');
+        const totalCountDiv = document.getElementById('totalcount');
+        const progressBar = document.getElementById('progressbar');
+        const counterValue = document.getElementById('counter-value');
+        let progressInterval = null;
+        let counterInterval = null;
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            wordcloudDiv.innerHTML = '';
+            errorDiv.textContent = '';
+            frequenciesDiv.innerHTML = '';
+            totalCountDiv.innerHTML = '';
+            loadingDiv.style.display = 'block';
+            progressBar.style.width = '0%';
+            counterValue.textContent = '0';
+            let progress = 0;
+            let counter = 0;
+            // Estimate total words (simulate, since backend does not provide live info)
+            const fileInput = document.getElementById('file');
+            let estimatedWords = 1000;
+            if (fileInput.files.length) {
+                const file = fileInput.files[0];
+                if (file.size < 100000) estimatedWords = 500;
+                else if (file.size < 500000) estimatedWords = 2000;
+                else estimatedWords = 5000;
+            }
+            // Simulate progress
+            if (progressInterval) clearInterval(progressInterval);
+            if (counterInterval) clearInterval(counterInterval);
+            progressInterval = setInterval(() => {
+                if (progress < 90) {
+                    progress += Math.random() * 3 + 1;
+                    if (progress > 90) progress = 90;
+                    progressBar.style.width = progress + '%';
+                }
+            }, 80);
+            counterInterval = setInterval(() => {
+                if (counter < estimatedWords * 0.9) {
+                    counter += Math.floor(Math.random() * 20 + 5);
+                    if (counter > estimatedWords * 0.9) counter = Math.floor(estimatedWords * 0.9);
+                    counterValue.textContent = counter;
+                }
+            }, 60);
+            const buzzwords = document.getElementById('buzzwords').value;
+            const formData = new FormData();
+            formData.append('buzzwords', buzzwords);
+            formData.append('file', fileInput.files[0]);
+            try {
+                const res = await fetch('http://localhost:5000/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+                loadingDiv.style.display = 'none';
+                clearInterval(progressInterval);
+                clearInterval(counterInterval);
+                progressBar.style.width = '100%';
+                counterValue.textContent = estimatedWords;
+                if (!res.ok) {
+                    const err = await res.json();
+                    errorDiv.textContent = err.error || 'Es ist ein Fehler aufgetreten.';
+                    return;
+                }
+                const data = await res.json();
+                // Show image
+                if (data.image) {
+                    wordcloudDiv.innerHTML = `<img src="${data.image}" alt="Word Cloud" style="max-width:100%; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.08);">`;
+                }
+                // Show frequencies as list
+                const frequencies = data.frequencies || {};
+                if (frequencies && Object.keys(frequencies).length > 0) {
+                    // Sortiere nach Häufigkeit (absteigend)
+                    const sorted = Object.entries(frequencies).sort((a, b) => b[1] - a[1]);
+                    let html = '<h4>Häufigkeit der Buzzwords:</h4><ul class="freq-list">';
+                    let total = 0;
+                    for (const [word, count] of sorted) {
+                        html += `<li><b>${word}</b>: ${count}</li>`;
+                        total += count;
+                    }
+                    html += '</ul>';
+                    frequenciesDiv.innerHTML = html;
+                    totalCountDiv.innerHTML = `<div class='totalcount-box'>Gesamtanzahl aller Einträge: <b>${total}</b></div>`;
+                }
+            } catch (err) {
+                loadingDiv.style.display = 'none';
+                clearInterval(progressInterval);
+                clearInterval(counterInterval);
+                errorDiv.textContent = 'Failed to connect to backend.';
+            }
+        };
+    </script>
 </body>
 </html>
-
