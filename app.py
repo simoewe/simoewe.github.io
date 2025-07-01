@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_file, make_response
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 import os
 import io
@@ -7,8 +7,6 @@ from docx import Document
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 import base64
-from flask import Flask, request, jsonify, render_template
-
 
 app = Flask(__name__)
 CORS(app)
@@ -16,7 +14,6 @@ CORS(app)
 UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# Helper to extract text from PDF
 def extract_text_pdf(file_stream):
     reader = PdfReader(file_stream)
     text = ''
@@ -24,14 +21,16 @@ def extract_text_pdf(file_stream):
         text += page.extract_text() or ''
     return text
 
-# Helper to extract text from DOCX
 def extract_text_docx(file_stream):
     doc = Document(file_stream)
     return '\n'.join([p.text for p in doc.paragraphs])
 
-# Helper to extract text from TXT
 def extract_text_txt(file_stream):
     return file_stream.read().decode('utf-8')
+
+@app.route('/')
+def home():
+    return render_template('index.html')
 
 @app.route('/analyze', methods=['POST'])
 def analyze():
@@ -39,8 +38,7 @@ def analyze():
     buzzwords = [w.strip().lower() for w in buzzwords.split(',') if w.strip()]
     file = request.files['file']
     filename = file.filename.lower()
-    
-    # Extract text
+
     if filename.endswith('.pdf'):
         text = extract_text_pdf(file.stream)
     elif filename.endswith('.docx'):
@@ -53,7 +51,6 @@ def analyze():
     text_lower = text.lower()
     freq = {w: text_lower.count(w) for w in buzzwords}
 
-    # Generate word cloud
     wc = WordCloud(width=800, height=400, background_color='white')
     wc.generate_from_frequencies(freq)
     img_io = io.BytesIO()
@@ -74,4 +71,4 @@ def analyze():
     })
 
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)
