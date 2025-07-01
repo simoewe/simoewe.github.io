@@ -7,6 +7,8 @@ from docx import Document
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 import base64
+from flask import Flask, request, jsonify, render_template
+
 
 app = Flask(__name__)
 CORS(app)
