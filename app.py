@@ -8,6 +8,8 @@ from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 import base64
 
+print("hehe")
+
 app = Flask(__name__)
 CORS(app)
 
