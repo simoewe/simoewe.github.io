@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+
 import os
 import io
 from PyPDF2 import PdfReader
@@ -8,9 +9,13 @@ from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 import base64
 import logging
+from textblob import TextBlob
+import spacy
+
 
 app = Flask(__name__)
 CORS(app)
+nlp = spacy.load('en_core_web_sm')
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
@@ -60,9 +65,11 @@ def extract_text_txt(file_stream):
         logging.error(f"TXT extraction failed: {e}")
         raise
 
+from collections import Counter
+
 @app.route('/analyze', methods=['POST'])
 def analyze():
-    """Analyze uploaded file for buzzword frequencies and generate a word cloud."""
+    """Analyze uploaded file for buzzword frequencies, word cloud, and extra metrics."""
     try:
         if 'file' not in request.files:
             return jsonify({'error': 'No file part in the request'}), 400
@@ -91,11 +98,91 @@ def analyze():
             return jsonify({'error': 'Unsupported file type'}), 400
 
         text_lower = text.lower()
-        freq = {w: text_lower.count(w) for w in buzzwords}
+        words = [w.strip(".,!?;:()[]") for w in text_lower.split()]
+        total_words = len(words)
+
+        # Frequency & density
+        freq = {w: words.count(w) for w in buzzwords}
+        density = {w: round((freq[w] / total_words) * 100, 2) if total_words > 0 else 0 for w in buzzwords}
+
+        # KWIC (Keyword in Context)
+        kwic_results = {}
+        window = 5
+        for bw in buzzwords:
+            snippets = []
+            for i, word in enumerate(words):
+                if word == bw:
+                    left = " ".join(words[max(0, i-window):i])
+                    right = " ".join(words[i+1:i+1+window])
+                    snippets.append(f"... {left} {word} {right} ...")
+            kwic_results[bw] = snippets[:3]  # limit to 3 examples per buzzword
+
+        # Collocations (top neighbors left/right)
+        collocations = {}
+        for bw in buzzwords:
+            left_neighbors, right_neighbors = [], []
+            for i, word in enumerate(words):
+                if word == bw:
+                    if i > 0:
+                        left_neighbors.append(words[i-1])
+                    if i < len(words)-1:
+                        right_neighbors.append(words[i+1])
+            left_counts = Counter(left_neighbors).most_common(3)
+            right_counts = Counter(right_neighbors).most_common(3)
+            collocations[bw] = {
+                "left": left_counts,
+                "right": right_counts
+            }
 
         # Safeguard: no buzzwords found
         if all(v == 0 for v in freq.values()):
             return jsonify({'error': 'No buzzwords found in text'}), 400
+
+        # Sentiment analysis
+        blob = TextBlob(text)
+        sentiment = {
+            'polarity': blob.sentiment.polarity,
+            'subjectivity': blob.sentiment.subjectivity
+        }
+
+        # Readability index (Flesch Reading Ease)
+        sentences = text.split(".")
+        num_sentences = len([s for s in sentences if s.strip()])
+        num_words = len(words)
+        num_syllables = sum(len(w) // 3 for w in words)  # quick syllable heuristic
+        try:
+            asl = num_words / num_sentences  # average sentence length
+            asw = num_syllables / num_words if num_words > 0 else 0
+            flesch_score = round(206.835 - 1.015*asl - 84.6*asw, 2)
+        except ZeroDivisionError:
+            flesch_score = None
+
+        readability = {
+            'flesch_reading_ease': flesch_score,
+            'total_words': num_words,
+            'total_sentences': num_sentences
+        }
+
+        # Custom Technological Trend Detection
+        import re
+        trends = [
+            "Artificial Intelligence", "Blockchain", "Big Data Analytics", "Internet of Things",
+            "Digital Twin", "5G Network", "Robotics", "Autonomous Systems", "Virtual Reality",
+            "Augmented Reality", "Cloud Computing", "Edge Computing", "Fog Computing"
+        ]
+        trend_results = []
+        sentences = re.split(r'(?<=[.!?])\s+', text)
+        for trend in trends:
+            trend_lower = trend.lower()
+            count = text.lower().count(trend_lower)
+            if count > 0:
+                context_sentences = [s.strip() for s in sentences if trend_lower in s.lower()]
+                context_sentences = context_sentences[:3]
+                trend_results.append({
+                    'trend': trend,
+                    'count': count,
+                    'contexts': context_sentences
+                })
 
         # Generate word cloud
         try:
@@ -118,7 +205,13 @@ def analyze():
         logging.info(f"File '{filename}' analyzed successfully.")
         return jsonify({
             'frequencies': freq,
-            'image': img_data_url
+            'densities': density,
+            'kwic': kwic_results,
+            'collocations': collocations,
+            'image': img_data_url,
+            'sentiment': sentiment,
+            'readability': readability,
+            'trends': trend_results
         })
     except Exception as e:
         logging.error(f"Analysis failed: {e}")
