@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { analyzeText, analyzeFile, ensureDataUrl } from '../lib/api'
 import SentimentCard from './Result/SentimentCard.jsx'
 import EntitiesList from './Result/EntitiesList.jsx'
-import Wordcloud from './Result/Wordcloud.jsx'
+import Wordcloud from './Result/WordCloud.jsx'
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024
 
