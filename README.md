@@ -11,7 +11,7 @@ Analyse containerlogistischer Trends im Kontext von IoT und Data Science
 2. Welche Chancen und Risiken ergeben sich aus der Integration von IoT- und Data-Science-Anwendungen in containerlogistische Prozesse?
 – Stichworte: Cybersicherheit, globale Abhängigkeiten, Zölle.
 
-3. Inwiefern führt der technologische Wandel zu neuen Abhängigkeiten in globalen Lieferketten?
+3. Inwiefern führt der technologische Wandel zu neuen Abhängigkeiten in globalen Lieferketten? Test
 
 🛠️ Ziel des Prototyps
 - Der entwickelte Prototyp dient der Analyse containerlogistikbezogener Inhalte auf Basis öffentlich zugänglicher Quellen wie Jahresberichte, Nachhaltigkeitsberichte, News-Artikeln etc.
