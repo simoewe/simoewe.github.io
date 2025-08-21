@@ -4,4 +4,5 @@ PyPDF2
 python-docx
 wordcloud
 matplotlib
-gunicorn
+textblob
+spacy
