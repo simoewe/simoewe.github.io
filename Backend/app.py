@@ -40,8 +40,8 @@ FRONTEND_BUILD = os.path.normpath(os.path.join(BASE_DIR, "../frontend/build"))
 
 app = Flask(
     __name__,
-    static_folder=os.path.join(FRONTEND_BUILD, "static"),  # <-- build/static
-    template_folder=FRONTEND_BUILD,                        # <-- build
+    static_folder=os.path.join(FRONTEND_BUILD, "static"),
+    template_folder=FRONTEND_BUILD,
     static_url_path="/static",
 )
 
