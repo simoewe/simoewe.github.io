@@ -36,13 +36,13 @@ from textblob import TextBlob  # noqa: E402
 # App-Grundkonfiguration
 # -----------------------------------------------------------------------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-FRONTEND_PUBLIC = os.path.normpath(os.path.join(BASE_DIR, "../frontend/public"))
+FRONTEND_BUILD = os.path.normpath(os.path.join(BASE_DIR, "../frontend/build"))
 
 app = Flask(
     __name__,
-    static_folder=FRONTEND_PUBLIC,         # statische Assets
-    template_folder=FRONTEND_PUBLIC,       # index.html liegt hier
-    static_url_path="/static",             # nicht die Root blockieren
+    static_folder=os.path.join(FRONTEND_BUILD, "static"),  # <-- build/static
+    template_folder=FRONTEND_BUILD,                        # <-- build
+    static_url_path="/static",
 )
 
 # CORS für lokale Dev & Deployment
