@@ -36,7 +36,7 @@ from textblob import TextBlob  # noqa: E402
 # App-Grundkonfiguration
 # -----------------------------------------------------------------------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-FRONTEND_PUBLIC = os.path.normpath(os.path.join(BASE_DIR, "../Frontend/public"))
+FRONTEND_PUBLIC = os.path.normpath(os.path.join(BASE_DIR, "../frontend/public"))
 
 app = Flask(
     __name__,
