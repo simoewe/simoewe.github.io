@@ -7,3 +7,4 @@ python-docx
 wordcloud
 matplotlib
 flask-cors
+pycryptodomex>=3.19
