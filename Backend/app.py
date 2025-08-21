@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, send_from_directory
 from flask_cors import CORS
 
 import os
@@ -16,7 +16,18 @@ import spacy
 from collections import Counter
 import re
 
-app = Flask(__name__)
+app = Flask(
+    __name__,
+    static_folder='../Frontend/public',   # alle Assets (png, ico, json, css, js)
+    template_folder='../Frontend/public', # hier liegt auch deine index.html
+    static_url_path=''                    # Assets direkt unter / verfügbar (z.B. /favicon.ico)
+)
+
+@app.route('/')
+def home():
+    # liefert deine neue index.html
+    return send_from_directory(app.template_folder, 'index.html')
+
 CORS(app)
 nlp = spacy.load('en_core_web_sm')
 
