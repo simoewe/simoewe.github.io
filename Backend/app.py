@@ -6,6 +6,8 @@ import io
 from PyPDF2 import PdfReader
 from docx import Document
 from wordcloud import WordCloud
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import base64
 import logging
