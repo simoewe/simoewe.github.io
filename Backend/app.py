@@ -1,4 +1,5 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
+import os
 from flask_cors import CORS
 
 import os
@@ -15,9 +16,8 @@ from collections import Counter
 import re
 
 # Initialize Flask
-app = Flask(__name__)
+app = Flask(__name__, static_folder="../frontend/build", static_url_path="/")
 CORS(app, origins=["https://simoewe-github-io-1-cdi0.onrender.com"])
-nlp = spacy.load('en_core_web_sm')
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
@@ -207,7 +207,13 @@ def analyze():
     except Exception as e:
         logging.error(f"Analysis failed: {e}")
         return jsonify({'error': 'Internal server error'}), 500
-
+@app.route("/", defaults={"path": ""})
+@app.route("/<path:path>")
+def serve_react(path):
+    if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
+        return send_from_directory(app.static_folder, path)
+    else:
+        return send_from_directory(app.static_folder, "index.html")
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
