@@ -3,6 +3,17 @@ services:
     name: my-backend
     env: python
     rootDir: Backend
-    buildCommand: "pip install -r requirements.txt"
+    buildCommand: "pip install -r ../requirements.txt"
     startCommand: "gunicorn app:app"
+    plan: free
+
+  - type: static
+    name: my-frontend
+    env: static
+    rootDir: frontend
+    buildCommand: "npm install && npm run build"
+    staticPublishPath: build
+    envVars:
+      - key: REACT_APP_API_URL
+        value: https://simoewe-github-io-z78f.onrender.com/
     plan: free
