@@ -1,0 +1,36 @@
+.tab, .tab-active {
+	padding: 8px 18px;
+	border: none;
+	border-radius: 6px 6px 0 0;
+	background: #f4f4f4;
+	color: #b10016;
+	font-size: 16px;
+	font-weight: bold;
+	cursor: pointer;
+	margin-bottom: -2px;
+	outline: none;
+	transition: background 0.2s, color 0.2s;
+}
+.tab-active {
+	background: #e2001a;
+	color: #fff;
+}
+.tab:not(.tab-active):hover {
+	background: #ffe5ea;
+}
+.container { max-width: 520px; margin: 40px auto; background: #fff; padding: 30px 40px 40px 40px; border-radius: 12px; box-shadow: 0 2px 12px rgba(226,0,26,0.08); border-top: 8px solid #e2001a; }
+h2 { text-align: center; color: #e2001a; letter-spacing: 1px; margin-bottom: 10px; }
+label { display: block; margin-top: 20px; color: #b10016; font-weight: bold; }
+input[type="text"], input[type="file"] { width: 100%; padding: 10px; margin-top: 8px; border: 1.5px solid #e2001a; border-radius: 6px; background: #f9f9fa; font-size: 16px; }
+button { margin-top: 25px; width: 100%; padding: 13px; background: linear-gradient(90deg, #e2001a 80%, #b10016 100%); color: #fff; border: none; border-radius: 6px; font-size: 18px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 8px rgba(226,0,26,0.08); transition: background 0.2s; }
+button:hover { background: linear-gradient(90deg, #b10016 80%, #e2001a 100%); }
+.wordcloud { margin-top: 30px; text-align: center; }
+.error { color: #e2001a; text-align: center; margin-top: 20px; font-weight: bold; }
+.freq-list { display: flex; flex-direction: column; align-items: center; margin: 0; padding: 0; }
+.freq-list li { background: #fff3f5; margin: 6px 0; padding: 10px 22px; border-radius: 8px; font-size: 18px; color: #b10016; box-shadow: 0 1px 4px rgba(226,0,26,0.06); min-width: 200px; text-align: left; border-left: 5px solid #e2001a; }
+.freq-list li b { color: #e2001a; }
+.totalcount-box { margin-top: 18px; background: #e2001a; color: #fff; font-size: 22px; border-radius: 10px; padding: 12px 0; font-weight: bold; box-shadow: 0 1px 6px rgba(226,0,26,0.10); letter-spacing: 1px; }
+#progressbar-container { width:100%; background:#ffe5ea; border-radius:8px; height:20px; margin-bottom:10px; border: 1.5px solid #e2001a; }
+#progressbar { height:100%; width:0%; background: linear-gradient(90deg, #e2001a 80%, #b10016 100%); border-radius:8px; transition: width 0.2s; }
+#livecounter { font-size:16px; color:#b10016; font-weight:bold; }
+.container img { margin-bottom: 18px; background: #fff; border-radius: 8px; box-shadow: 0 1px 6px rgba(226,0,26,0.10); padding: 8px; }

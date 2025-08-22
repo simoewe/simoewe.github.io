@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template, send_from_directory
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 
 import os
@@ -14,14 +14,7 @@ import spacy
 from collections import Counter
 import re
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-PUBLIC_DIR = os.path.normpath(os.path.join(BASE_DIR, "../frontend/public"))
-
-app = Flask(
-    __name__,
-    static_folder=PUBLIC_DIR          # für Assets (CSS/JS/Bilder)
-    # template_folder=PUBLIC_DIR         # optional, falls du render_template nutzen willst
-)
+app = Flask(__name__)
 CORS(app)
 nlp = spacy.load('en_core_web_sm')
 
@@ -81,17 +74,8 @@ def extract_text_txt(file_stream):
 
 @app.route('/')
 def home():
-    return send_from_directory(app.static_folder, "index.html")
+    return render_template('index.html')
 
-# Assets & sonstige Dateien ausliefern (z. B. /styles.css, /img/logo.png)
-@app.route("/<path:path>", methods=["GET"])
-def static_proxy(path):
-    return send_from_directory(app.static_folder, path)
-
-# Healthcheck-Endpunkt (kannst du in Render als Health Check Path setzen)
-@app.route("/health", methods=["GET", "HEAD"])
-def health():
-    return "OK", 200
 
 @app.route('/analyze', methods=['POST'])
 def analyze():
