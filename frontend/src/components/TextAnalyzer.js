@@ -93,7 +93,8 @@ const TextAnalyzer = () => {
     formData.append('file', file);
 
     try {
-      const res = await fetch('http://localhost:5000/analyze', {
+  const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+  const res = await fetch(`${apiUrl}/analyze`, {
         method: 'POST',
         body: formData,
       });
