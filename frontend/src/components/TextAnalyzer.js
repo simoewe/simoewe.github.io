@@ -83,7 +83,7 @@ const TextAnalyzer = () => {
     formData.append('file', file);
 
     try {
-      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+  const apiUrl = process.env.REACT_APP_API_URL || 'https://simoewe-github-io-z78f.onrender.com';
       const res = await fetch(`${apiUrl}/analyze`, {
         method: 'POST',
         body: formData,

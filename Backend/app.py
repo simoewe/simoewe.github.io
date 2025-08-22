@@ -16,7 +16,7 @@ import re
 
 # Initialize Flask
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "https://simoewe-github-io-1-cdi0.onrender.com"}}) # Allow specific origin;
+CORS(app, origins=["https://simoewe-github-io-1-cdi0.onrender.com"])
 nlp = spacy.load('en_core_web_sm')
 
 # Configure logging
