@@ -15,5 +15,5 @@ services:
     staticPublishPath: build
     envVars:
       - key: REACT_APP_API_URL
-        value: https://simoewe-github-io-z78f.onrender.com/
+        value: https://simoewe-github-io-z78f.onrender.com
     plan: free
