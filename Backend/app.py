@@ -17,7 +17,7 @@ import re
 
 # Initialize Flask
 app = Flask(__name__, static_folder="../frontend/build", static_url_path="/")
-CORS(app, origins=["https://simoewe-github-io-1-cdi0.onrender.com"])
+CORS(app, origins=[os.environ.get("FRONTEND_URL", "*")])
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
@@ -64,7 +64,7 @@ def extract_text_txt(file_stream):
         raise
 
 
-@app.route('/')
+@app.route('/health')
 def health_check():
     return jsonify({"status": "OK", "message": "Buzzword Analyzer API running"}), 200
 
@@ -207,13 +207,6 @@ def analyze():
     except Exception as e:
         logging.error(f"Analysis failed: {e}")
         return jsonify({'error': 'Internal server error'}), 500
-@app.route("/", defaults={"path": ""})
-@app.route("/<path:path>")
-def serve_react(path):
-    if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
-        return send_from_directory(app.static_folder, path)
-    else:
-        return send_from_directory(app.static_folder, "index.html")
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))

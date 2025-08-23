@@ -1,13 +1,29 @@
 services:
+  # --- Backend Service (Flask) ---
   - type: web
-    name: my-fullstack-app
+    name: buzzword-analyzer-backend
     env: python
     rootDir: Backend
+    plan: free
     buildCommand: |
       pip install --upgrade pip
       pip install -r ../requirements.txt
       python -m spacy download en_core_web_sm
-      cd ../frontend && npm install && npm run build
-    startCommand: "gunicorn app:app"
-    staticPublishPath: ../frontend/build
+    startCommand: gunicorn app:app
+    envVars:
+      - key: FRONTEND_URL
+        value: https://buzzword-analyzer-frontend.onrender.com
+
+  # --- Frontend Service (React) ---
+  - type: static_site
+    name: buzzword-analyzer-frontend
+    rootDir: frontend
     plan: free
+    buildCommand: npm install && npm run build
+    publishPath: build
+    envVars:
+      - key: REACT_APP_API_URL
+        fromService:
+          name: buzzword-analyzer-backend
+          type: web
+          property: url
