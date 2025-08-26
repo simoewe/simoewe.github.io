@@ -13,7 +13,7 @@
   }
 }
 
-.App-header {
+/* .App-header {
   background-color: #282c34;
   min-height: 100vh;
   display: flex;
@@ -22,7 +22,7 @@
   justify-content: center;
   font-size: calc(10px + 2vmin);
   color: white;
-}
+} */
 
 .App-link {
   color: #61dafb;
@@ -35,4 +35,202 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+
+
+
+/* Neu  */
+
+
+
+
+/* Basis-Stil */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+html, body, #root, .app {
+  height: 100%;
+  width: 100%;
+  font-family: "Poppins", sans-serif;
+}
+.body {
+  height: calc(100% - 64px);
+}
+
+/* Header */
+.header {
+  width: 100%;
+}
+
+/* Navigation */
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 40px;
+  background: white;
+  border-bottom: 1px solid #eee;
+}
+
+/* Logo */
+.logo {
+  font-size: 18px;
+  font-weight: 600;
+  color: #222;
+  display: flex;
+  align-items: center;
+}
+
+.logo-img {
+  margin-right: 10px;
+  font-size: 20px;
+  max-height: 30px;
+  width: auto;
+}
+
+/* Links */
+.nav-rechts {
+  list-style: none;
+  display: flex;
+  gap: 25px;
+  font-weight: 500;
+  font-size: 15px;
+  color: #444;
+  margin: 0;
+}
+
+.nav-rechts li {
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.nav-rechts li:hover {
+  color: #E2001B;
+}
+
+
+/* Panel-Inhalt und Abstände */
+.pane-content {
+  height: 100%;
+  padding-top: 7vh;
+  padding-left: 1%;
+  padding-right: 1%;
+  padding-bottom: 1%;
+  background: #f2f2f2;
+  display: flex;
+  flex-direction: column;
+}
+.inner-container {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+.inner-container.top {
+  height: 60%;
+}
+.inner-container.bottom {
+  margin-top: 2%;
+  flex-grow: 1;
+}
+.inner-container.full {
+  height: 100%;
+}
+
+/* Custom Resizer-Stil */
+.custom-handle {
+  width: 7px;
+  cursor: col-resize;
+  background: #cccccc;
+  position: relative;
+  z-index: 10;
+  transition: background 0.2s ease;
+}
+
+.custom-handle:hover {
+  background: #999999;
+}
+
+/* Drei Punkte in der Mitte */
+.custom-handle::before {
+  content: "⋮";              /* vertikale 3 Punkte */
+  font-size: 16px;
+  color: #555;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  line-height: 1;
+}
+
+
+/* PDF-Upload Panel */
+.right-panel {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Dropzone + Viewer sollen komplett füllen */
+.fullsize {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+}
+
+/* Dropzone Style */
+.dropzone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed #bbb;
+  border-radius: 12px;
+  color: #666;
+  background: #fafafa;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+.dropzone:hover {
+  border-color: #333;
+}
+
+/* PDF-Viewer */
+.pdf-viewer {
+  overflow: auto;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  padding: 1rem;
+}
+
+
+/* Input */
+.keyword-input-wrapper {
+  width: 100%;
+  padding: 2%;
+  box-sizing: border-box;
+  user-select: none;
+  height: 100%;
+}
+
+.keyword-textarea {
+  width: 100%;
+  height: 100%;
+  padding: 8px 12px;
+  font-size: 14px;
+  border: none;
+  border-radius: 8px;
+  outline: none;
+  resize: none;           /* verhindert manuelles Ziehen */
+  user-select: text;
+  box-sizing: border-box;
+  vertical-align: top;
+}
+
+.keyword-textarea:focus {
+  background-color: #fff;
+  box-shadow: 0 0 4px rgba(74, 144, 226, 0.4);
 }
