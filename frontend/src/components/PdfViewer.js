@@ -1,13 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useDropzone } from "react-dropzone";
-import { Document, Page } from "react-pdf";
+import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
-import { pdfjs } from "react-pdf";
-
+// Worker-Setup (korrekt für pdfjs-dist v5.x)
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  "pdfjs-dist/build/pdf.worker.min.mjs",
+  "pdfjs-dist/build/pdf.worker.mjs",
   import.meta.url
 ).toString();
 
@@ -16,22 +15,13 @@ function RightPanel() {
   const [numPages, setNumPages] = useState(null);
 
   const onDrop = (acceptedFiles) => {
-  const file = acceptedFiles[0];
-  if (file && file.type === "application/pdf") {
-    setPdfFile(file);   // direkt File-Objekt speichern
-  } else {
-    console.error("Keine gültige PDF-Datei hochgeladen.");
-  }
-};
-
-  // Speicher aufräumen, wenn neues File gesetzt oder Komponente unmountet wird
-  useEffect(() => {
-    return () => {
-      if (pdfFile) {
-        URL.revokeObjectURL(pdfFile);
-      }
-    };
-  }, [pdfFile]);
+    const file = acceptedFiles[0];
+    if (file && file.type === "application/pdf") {
+      setPdfFile(file); // direkt File an react-pdf übergeben
+    } else {
+      console.error("Keine gültige PDF-Datei hochgeladen.");
+    }
+  };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -55,10 +45,12 @@ function RightPanel() {
           <Document
             file={pdfFile}
             onLoadSuccess={({ numPages }) => {
-              console.log("PDF geladen, Seiten:", numPages);
+              console.log("✅ PDF geladen, Seiten:", numPages);
               setNumPages(numPages);
             }}
-            onLoadError={(err) => console.error("PDF Ladefehler:", err)}
+            onLoadError={(err) =>
+              console.error("❌ PDF Ladefehler:", err.message, err)
+            }
           >
             {Array.from(new Array(numPages), (el, index) => (
               <Page
