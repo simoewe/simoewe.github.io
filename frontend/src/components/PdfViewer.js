@@ -4,15 +4,24 @@ import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
-// Worker-Setup for pdfjs-dist v5.x - Production ready
-// Use CDN for reliable worker loading in production
-pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
-
-// Alternative: Use local worker as fallback
-// pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-//   'pdfjs-dist/build/pdf.worker.min.js',
-//   import.meta.url,
-// ).toString();
+// Worker-Setup for pdfjs-dist v5.x - Multiple fallback strategies
+try {
+  // Strategy 1: Use local bundled worker (most reliable)
+  pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+    'pdfjs-dist/build/pdf.worker.min.mjs',
+    import.meta.url,
+  ).toString();
+} catch (error) {
+  console.warn('Local worker failed, trying CDN fallback:', error);
+  try {
+    // Strategy 2: Use jsDelivr CDN (has proper CORS headers)
+    pdfjs.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
+  } catch (cdnError) {
+    console.warn('CDN worker failed, using inline worker:', cdnError);
+    // Strategy 3: Disable worker (slower but works)
+    pdfjs.GlobalWorkerOptions.workerSrc = '';
+  }
+}
 
 function RightPanel() {
   const [pdfFile, setPdfFile] = useState(null);
