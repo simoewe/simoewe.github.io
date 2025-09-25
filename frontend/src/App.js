@@ -28,22 +28,22 @@ function App() {
           <Panel defaultSize={50} minSize={10}>
             <div className="pane-content" style={{ height: '100%' }}>
               <PanelGroup direction="vertical" autoSaveId="layout-vertical">
-                <Panel defaultSize={50} minSize={10}>
-                  <div className="inner-container top" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Panel defaultSize={20} minSize={15} maxSize={30}>
+                  <div className="inner-container top" style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '8px', height: '100%' }}>
                     <KeywordInput 
                       value={keywords} 
                       onChange={(e) => setKeywords(e.target.value)} 
                     />
                     <button 
                       onClick={handleSearch} 
-                      style={{ height: '40px' }}
+                      style={{ height: '40px', width: '100%' }}
                     >
                       Search
                     </button>
                   </div>
                 </Panel>
                 <PanelResizeHandle className="custom-handle-vertical" />
-                <Panel defaultSize={50} minSize={10}>
+                <Panel defaultSize={80} minSize={70}>
                   <div className="inner-container bottom" style={{ maxHeight: '400px', overflowY: 'auto', border: '1px solid #e0e0e0', borderRadius: '8px', background: '#fff' }}>
                     <TextAnalyzer keywords={searchTerm} />
                   </div>
