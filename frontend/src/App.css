@@ -1,3 +1,27 @@
+/* Custom vertical resizer style */
+.custom-handle-vertical {
+  height: 7px;
+  cursor: row-resize;
+  background: #cccccc;
+  position: relative;
+  z-index: 10;
+  transition: background 0.2s ease;
+}
+
+.custom-handle-vertical:hover {
+  background: #999999;
+}
+
+.custom-handle-vertical::before {
+  content: "..."; /* horizontal 3 dots */
+  font-size: 16px;
+  color: #555;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  line-height: 1;
+}
 .App {
   text-align: center;
 }
