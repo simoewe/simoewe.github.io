@@ -66,19 +66,23 @@ function App() {
             <div className="pane-content" style={{ height: '100%' }}>
               <PanelGroup direction="vertical" autoSaveId="layout-vertical">
                 <Panel defaultSize={20} minSize={15} maxSize={30}>
-                  <div className="inner-container top" style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '8px', height: '100%' }}>
-                    <KeywordInput 
-                      value={keywords} 
-                      onChange={(e) => setKeywords(e.target.value)} 
-                    />
-                    <button 
-                      onClick={handleSearch} 
-                      style={{ height: '40px', width: '100%' }}
-                      disabled={loading}
-                    >
-                      {loading ? "Analyzing..." : "Analyze"}
-                    </button>
-                    {error && <div style={{ color: 'red', marginTop: '8px' }}>{error}</div>}
+                  <div className="inner-container top" style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative', padding: '8px', overflowY: 'auto' }}>
+                    <div style={{ flex: 1, minHeight: '80px', marginBottom: '16px', paddingRight: '2px' }}>
+                      <KeywordInput 
+                        value={keywords} 
+                        onChange={(e) => setKeywords(e.target.value)} 
+                      />
+                    </div>
+                    <div style={{ background: '#fff', zIndex: 2, paddingBottom: '8px', boxShadow: '0 -2px 6px rgba(0,0,0,0.04)' }}>
+                      <button 
+                        onClick={handleSearch} 
+                        style={{ height: '40px', width: '100%' }}
+                        disabled={loading}
+                      >
+                        {loading ? "Analyzing..." : "Analyze"}
+                      </button>
+                      {error && <div style={{ color: 'red', marginTop: '8px' }}>{error}</div>}
+                    </div>
                   </div>
                 </Panel>
                 <PanelResizeHandle className="custom-handle-vertical" />

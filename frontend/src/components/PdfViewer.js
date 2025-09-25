@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useDropzone } from "react-dropzone";
 import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
+
 
 function RightPanel({ onFileUpload }) {
   const [pdfFile, setPdfFile] = useState(null);
@@ -11,13 +12,13 @@ function RightPanel({ onFileUpload }) {
   const [pageNumber, setPageNumber] = useState(1);
   const [uploadStatus, setUploadStatus] = useState(null);
   const [pdfError, setPdfError] = useState(null);
-  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [scale, setScale] = useState(1.0);
+  const containerRef = useRef(null);
+  const [containerWidth, setContainerWidth] = useState(600);
 
   useEffect(() => {
     // Set up PDF.js worker synchronously
     const localWorker = `${process.env.PUBLIC_URL}/pdf.worker.min.js`;
-    // Try local worker first
     fetch(localWorker, { method: "HEAD" })
       .then((res) => {
         if (res.ok) {
@@ -30,9 +31,20 @@ function RightPanel({ onFileUpload }) {
         pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
       });
 
-    const handleResize = () => setWindowWidth(window.innerWidth);
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    // ResizeObserver for responsive PDF width
+    const observer = new window.ResizeObserver((entries) => {
+      for (let entry of entries) {
+        if (entry.contentRect) {
+          setContainerWidth(entry.contentRect.width);
+        }
+      }
+    });
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+    return () => {
+      observer.disconnect();
+    };
   }, []);
 
   const onDrop = (acceptedFiles, rejectedFiles) => {
@@ -90,12 +102,12 @@ function RightPanel({ onFileUpload }) {
     },
   });
 
-  // ✅ Zoom controls
+  // Zoom controls
   const zoomIn = () => setScale((s) => Math.min(s + 0.2, 3.0));
   const zoomOut = () => setScale((s) => Math.max(s - 0.2, 0.5));
   const resetZoom = () => setScale(1.0);
 
-  // ✅ Page navigation
+  // Page navigation
   const nextPage = () =>
     setPageNumber((prev) => Math.min(prev + 1, numPages || prev));
   const prevPage = () =>
@@ -108,7 +120,7 @@ function RightPanel({ onFileUpload }) {
   };
 
   return (
-    <div className="right-panel">
+    <div className="right-panel" ref={containerRef}>
       {fileTypeError && (
         <div style={{ color: "#dc3545", fontWeight: "bold", marginBottom: "10px" }}>
           {fileTypeError}
@@ -227,7 +239,7 @@ function RightPanel({ onFileUpload }) {
                 pageNumber={pageNumber}
                 renderTextLayer={false}
                 renderAnnotationLayer={false}
-                width={Math.min(windowWidth * 0.4, 600) * scale}
+                width={Math.max(Math.min(containerWidth, 900) * scale, 200)}
               />
             </Document>
           )}
