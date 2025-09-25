@@ -1,29 +1,26 @@
 services:
   # --- Backend Service (Flask) ---
   - type: web
-    name: buzzword-analyzer-backend
+    name: simoewe-github-io-backend
     env: python
     rootDir: Backend
     plan: free
     buildCommand: |
       pip install --upgrade pip
-      pip install -r ../requirements.txt
+      pip install -r requirements.txt
       python -m spacy download en_core_web_sm
     startCommand: gunicorn app:app
     envVars:
       - key: FRONTEND_URL
-        value: https://buzzword-analyzer-frontend.onrender.com
+        value: https://simoewe-github-io-1-cdi0.onrender.com
 
   # --- Frontend Service (React) ---
   - type: static_site
-    name: buzzword-analyzer-frontend
+    name: simoewe-github-io-frontend
     rootDir: frontend
     plan: free
     buildCommand: npm install && npm run build
     publishPath: build
     envVars:
       - key: REACT_APP_API_URL
-        fromService:
-          name: buzzword-analyzer-backend
-          type: web
-          property: url
+        value: https://simoewe-github-io-z78f.onrender.com

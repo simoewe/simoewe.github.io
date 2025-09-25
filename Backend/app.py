@@ -14,7 +14,23 @@ import re
 
 # Initialize Flask
 app = Flask(__name__, static_folder="../frontend/build", static_url_path="/")
-CORS(app, origins=[os.environ.get("FRONTEND_URL", "*")])
+
+# Configure CORS for Render deployment
+allowed_origins = [
+    "https://simoewe-github-io-1-cdi0.onrender.com",  # Your frontend URL
+    "http://localhost:3000",  # Local development
+    "https://simoewe.github.io",  # GitHub Pages if used
+]
+
+# Add environment variable support
+if os.environ.get("FRONTEND_URL"):
+    allowed_origins.append(os.environ.get("FRONTEND_URL"))
+
+CORS(app, 
+     origins=allowed_origins,
+     methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+     allow_headers=['Content-Type', 'Authorization'],
+     supports_credentials=True)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
