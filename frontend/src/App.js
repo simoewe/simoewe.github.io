@@ -12,10 +12,47 @@ import {
 
 function App() {
   const [keywords, setKeywords] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
+  const [file, setFile] = useState(null);
+  const [analysisResult, setAnalysisResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSearch = () => {
-    setSearchTerm(keywords.trim());
+  // File is set from right panel
+  const handleFileUpload = (uploadedFile) => {
+    setFile(uploadedFile);
+  };
+
+  const handleSearch = async () => {
+    setLoading(true);
+    setError("");
+    setAnalysisResult(null);
+    if (!file) {
+      setError("Please select a file to analyze.");
+      setLoading(false);
+      return;
+    }
+    if (!keywords.trim()) {
+      setError("Please enter keywords.");
+      setLoading(false);
+      return;
+    }
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("buzzwords", keywords);
+      const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:5000";
+      const res = await fetch(`${apiUrl}/analyze`, {
+        method: "POST",
+        body: formData,
+      });
+      if (!res.ok) throw new Error("Analysis request failed.");
+      const data = await res.json();
+      setAnalysisResult(data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -37,15 +74,17 @@ function App() {
                     <button 
                       onClick={handleSearch} 
                       style={{ height: '40px', width: '100%' }}
+                      disabled={loading}
                     >
-                      Search
+                      {loading ? "Analyzing..." : "Analyze"}
                     </button>
+                    {error && <div style={{ color: 'red', marginTop: '8px' }}>{error}</div>}
                   </div>
                 </Panel>
                 <PanelResizeHandle className="custom-handle-vertical" />
                 <Panel defaultSize={80} minSize={70}>
                   <div className="inner-container bottom" style={{ maxHeight: '400px', overflowY: 'auto', border: '1px solid #e0e0e0', borderRadius: '8px', background: '#fff' }}>
-                    <TextAnalyzer keywords={searchTerm} />
+                    <TextAnalyzer analysisResult={analysisResult} loading={loading} />
                   </div>
                 </Panel>
               </PanelGroup>
@@ -56,7 +95,7 @@ function App() {
           <Panel defaultSize={50} minSize={10}>
             <div className="pane-content">
               <div className="inner-container full">
-                <RightPanel />
+                <RightPanel onFileUpload={handleFileUpload} />
               </div>
             </div>
           </Panel>

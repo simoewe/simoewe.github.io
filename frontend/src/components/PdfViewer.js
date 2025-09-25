@@ -1,106 +1,76 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
-// Worker-Setup for pdfjs-dist v5.x - Disabled for Render compatibility
-// Disable worker to avoid CORS and 404 issues in production
-pdfjs.GlobalWorkerOptions.workerSrc = '';
-
-// Log the worker setup for debugging
-console.log('PDF.js worker disabled for production compatibility');
-
-function RightPanel() {
+function RightPanel({ onFileUpload }) {
   const [pdfFile, setPdfFile] = useState(null);
+  const [fileTypeError, setFileTypeError] = useState("");
   const [numPages, setNumPages] = useState(null);
-  const [uploading, setUploading] = useState(false);
+  const [pageNumber, setPageNumber] = useState(1);
   const [uploadStatus, setUploadStatus] = useState(null);
-  const [analysisResult, setAnalysisResult] = useState(null);
   const [pdfError, setPdfError] = useState(null);
-  const [pdfLoading, setPdfLoading] = useState(false);
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const [scale, setScale] = useState(1.0);
 
-  const uploadToBackend = async (file) => {
-    setUploading(true);
-    setUploadStatus('Uploading PDF...');
-    
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('buzzwords', 'iot,container,logistics,supply,automation,digital,blockchain');
-      
-      // Determine API URL based on environment
-      let apiUrl = process.env.REACT_APP_API_URL;
-      
-      if (!apiUrl) {
-        // Auto-detect API URL for Render deployment
-        if (window.location.hostname.includes('onrender.com')) {
-          apiUrl = 'https://simoewe-github-io-z78f.onrender.com';
+  useEffect(() => {
+    // Set up PDF.js worker synchronously
+    const localWorker = `${process.env.PUBLIC_URL}/pdf.worker.min.js`;
+    // Try local worker first
+    fetch(localWorker, { method: "HEAD" })
+      .then((res) => {
+        if (res.ok) {
+          pdfjs.GlobalWorkerOptions.workerSrc = localWorker;
         } else {
-          apiUrl = 'http://localhost:5000';
+          pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
         }
-      }
-      
-      console.log('Using API URL:', apiUrl);
-      
-      const response = await fetch(`${apiUrl}/analyze`, {
-        method: 'POST',
-        body: formData,
-        mode: 'cors',
-        credentials: 'omit'
+      })
+      .catch(() => {
+        pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
       });
-      
-      if (!response.ok) {
-        throw new Error('Upload failed');
-      }
-      
-      const result = await response.json();
-      setAnalysisResult(result);
-      setUploadStatus('✅ PDF analyzed successfully!');
-      console.log('Analysis result:', result);
-      
-    } catch (error) {
-      console.error('Upload error:', error);
-      setUploadStatus('❌ Upload failed');
-    } finally {
-      setUploading(false);
-    }
-  };
+
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const onDrop = (acceptedFiles, rejectedFiles) => {
-    // Clear previous errors
     setPdfError(null);
     setUploadStatus(null);
-    
+    setFileTypeError("");
+
     if (rejectedFiles && rejectedFiles.length > 0) {
-      console.error('Rejected files:', rejectedFiles);
-      setUploadStatus('❌ Invalid file type or size');
+      console.error("Rejected files:", rejectedFiles);
+      setUploadStatus("❌ Invalid file type or size");
       return;
     }
 
     const file = acceptedFiles[0];
     if (!file) {
-      setUploadStatus('❌ No file selected');
+      setUploadStatus("❌ No file selected");
       return;
     }
 
-    console.log('File details:', {
-      name: file.name,
-      type: file.type,
-      size: file.size
-    });
+    const isPdf =
+      file.type === "application/pdf" ||
+      file.name.toLowerCase().endsWith(".pdf");
 
-    // More flexible PDF type checking
-    const isPdf = file.type === "application/pdf" || 
-                  file.name.toLowerCase().endsWith('.pdf');
-    
-    if (isPdf && file.size <= 5 * 1024 * 1024) { // 5MB limit to match backend
-      console.log('✅ Valid PDF file, setting up...');
-      setPdfLoading(true);
-      setPdfFile(file);
-      uploadToBackend(file);
+    if (isPdf && file.size <= 5 * 1024 * 1024) {
+      const fileUrl = URL.createObjectURL(file);
+      setPdfFile(fileUrl);
+
+      if (onFileUpload) {
+        onFileUpload(file);
+      }
+
+      return () => URL.revokeObjectURL(fileUrl);
     } else {
-      const error = !isPdf ? 'Invalid file type (PDF required)' : 'File too large (max 5MB)';
+      const error = !isPdf
+        ? "Invalid file type (PDF required)"
+        : "File too large (max 5MB)";
+      setFileTypeError(`❌ ${error}`);
+      setPdfFile(null);
       console.error(error);
       setUploadStatus(`❌ ${error}`);
     }
@@ -108,30 +78,51 @@ function RightPanel() {
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: { 
-      "application/pdf": [".pdf"],
-      "application/x-pdf": [".pdf"]
-    },
+    accept: { "application/pdf": [".pdf"], "application/x-pdf": [".pdf"] },
     multiple: false,
-    maxSize: 5 * 1024 * 1024, // 5MB to match backend limit
+    maxSize: 5 * 1024 * 1024,
     onDropRejected: (rejectedFiles) => {
-      console.error('Files rejected:', rejectedFiles);
-      const reasons = rejectedFiles.map(f => f.errors.map(e => e.message).join(', ')).join('; ');
+      console.error("Files rejected:", rejectedFiles);
+      const reasons = rejectedFiles
+        .map((f) => f.errors.map((e) => e.message).join(", "))
+        .join("; ");
       setUploadStatus(`❌ Upload failed: ${reasons}`);
-    }
+    },
   });
+
+  // ✅ Zoom controls
+  const zoomIn = () => setScale((s) => Math.min(s + 0.2, 3.0));
+  const zoomOut = () => setScale((s) => Math.max(s - 0.2, 0.5));
+  const resetZoom = () => setScale(1.0);
+
+  // ✅ Page navigation
+  const nextPage = () =>
+    setPageNumber((prev) => Math.min(prev + 1, numPages || prev));
+  const prevPage = () =>
+    setPageNumber((prev) => Math.max(prev - 1, 1));
+  const jumpToPage = (e) => {
+    const val = parseInt(e.target.value, 10);
+    if (!isNaN(val) && val >= 1 && val <= numPages) {
+      setPageNumber(val);
+    }
+  };
 
   return (
     <div className="right-panel">
+      {fileTypeError && (
+        <div style={{ color: "#dc3545", fontWeight: "bold", marginBottom: "10px" }}>
+          {fileTypeError}
+        </div>
+      )}
       {!pdfFile ? (
         <div {...getRootProps({ className: "dropzone fullsize" })}>
           <input {...getInputProps()} />
           {isDragActive ? (
             <p>Ziehe die PDF hierher…</p>
           ) : (
-            <div style={{ textAlign: 'center' }}>
+            <div style={{ textAlign: "center" }}>
               <p>📄 PDF hochladen (Drag & Drop oder klicken)</p>
-              <p style={{ fontSize: '14px', color: '#666', marginTop: '10px' }}>
+              <p style={{ fontSize: "14px", color: "#666", marginTop: "10px" }}>
                 Upload containerlogistics documents for analysis
               </p>
             </div>
@@ -139,131 +130,105 @@ function RightPanel() {
         </div>
       ) : (
         <div className="pdf-viewer fullsize">
-          {/* Upload Status */}
-          <div style={{ 
-            padding: '10px', 
-            backgroundColor: uploading ? '#fff3cd' : uploadStatus?.includes('✅') ? '#d4edda' : uploadStatus?.includes('❌') ? '#f8d7da' : '#e9ecef',
-            borderRadius: '8px',
-            marginBottom: '10px',
-            fontSize: '14px',
-            fontWeight: 'bold'
-          }}>
-            {uploading ? '⏳ Processing PDF...' : uploadStatus || '📄 PDF loaded'}
+          {/* Upload status */}
+          <div
+            style={{
+              padding: "10px",
+              backgroundColor:
+                uploadStatus?.includes("✅")
+                  ? "#d4edda"
+                  : uploadStatus?.includes("❌")
+                  ? "#f8d7da"
+                  : "#e9ecef",
+              borderRadius: "8px",
+              marginBottom: "10px",
+              fontSize: "14px",
+              fontWeight: "bold",
+            }}
+          >
+            {uploadStatus || "📄 PDF loaded"}
           </div>
 
-          {/* Analysis Summary */}
-          {analysisResult && (
-            <div style={{ 
-              padding: '10px', 
-              backgroundColor: '#d4edda', 
-              borderRadius: '8px',
-              marginBottom: '10px',
-              fontSize: '12px',
-              border: '1px solid #c3e6cb'
-            }}>
-              <strong>✅ PDF Analysis Complete:</strong>
-              <div style={{ marginTop: '5px' }}>
-                📊 Buzzwords found: {Object.values(analysisResult.frequencies || {}).reduce((a, b) => a + b, 0)}
-              </div>
-              <div>📝 Document text extracted successfully</div>
-              <div>🔍 Ready for keyword search in left panel</div>
-              {pdfError && (
-                <div style={{ marginTop: '8px', padding: '8px', backgroundColor: '#fff3cd', borderRadius: '4px', color: '#856404' }}>
-                  <strong>Note:</strong> PDF preview unavailable, but content analysis works normally.
-                </div>
-              )}
-            </div>
-          )}
+          {/* Zoom controls */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              gap: "10px",
+              marginBottom: "10px",
+            }}
+          >
+            <button onClick={zoomOut}>➖ Zoom Out</button>
+            <button onClick={resetZoom}>🔄 Reset</button>
+            <button onClick={zoomIn}>➕ Zoom In</button>
+          </div>
 
-          {/* PDF Error Display */}
-          {pdfError && (
-            <div style={{
-              padding: '15px',
-              backgroundColor: '#f8d7da',
-              borderRadius: '8px',
-              color: '#721c24',
-              marginBottom: '10px'
-            }}>
-              <strong>PDF Loading Error:</strong>
-              <div style={{ marginTop: '5px', fontSize: '14px' }}>
-                {pdfError}
-              </div>
-              <div style={{ marginTop: '10px', fontSize: '12px' }}>
-                Try:
-                <ul style={{ margin: '5px 0', paddingLeft: '20px' }}>
-                  <li>Make sure it's a valid PDF file</li>
-                  <li>Check if file is corrupted</li>
-                  <li>Try a different PDF</li>
-                </ul>
-              </div>
+          {/* Slider */}
+          <div style={{ textAlign: "center", marginBottom: "15px" }}>
+            <input
+              type="range"
+              min="0.5"
+              max="3"
+              step="0.1"
+              value={scale}
+              onChange={(e) => setScale(parseFloat(e.target.value))}
+            />
+            <div style={{ fontSize: "12px", marginTop: "5px" }}>
+              Zoom: {(scale * 100).toFixed(0)}%
             </div>
-          )}
+          </div>
+
+          {/* Page navigation */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              gap: "10px",
+              marginBottom: "15px",
+            }}
+          >
+            <button onClick={prevPage} disabled={pageNumber <= 1}>
+              ⬅ Prev
+            </button>
+            <span>
+              Page{" "}
+              <input
+                type="number"
+                value={pageNumber}
+                onChange={jumpToPage}
+                min={1}
+                max={numPages || 1}
+                style={{ width: "50px", textAlign: "center" }}
+              />{" "}
+              of {numPages || "?"}
+            </span>
+            <button onClick={nextPage} disabled={pageNumber >= numPages}>
+              Next ➡
+            </button>
+          </div>
 
           {/* PDF Viewer */}
           {!pdfError && (
             <Document
               file={pdfFile}
-              loading={
-                <div style={{ textAlign: 'center', padding: '20px' }}>
-                  <div>🔄 Loading PDF...</div>
-                </div>
-              }
-              error={
-                <div style={{ textAlign: 'center', padding: '20px', backgroundColor: '#f8f9fa', border: '2px dashed #dee2e6', borderRadius: '8px' }}>
-                  <div style={{ fontSize: '24px', marginBottom: '10px' }}>📄</div>
-                  <div style={{ color: '#6c757d', marginBottom: '8px' }}>PDF Preview Not Available</div>
-                  <div style={{ fontSize: '14px', color: '#28a745', fontWeight: 'bold' }}>
-                    ✅ Document Analysis Completed Successfully
-                  </div>
-                  <div style={{ fontSize: '12px', marginTop: '8px', color: '#666' }}>
-                    Your PDF content has been processed and is ready for keyword search.
-                  </div>
-                  <div style={{ fontSize: '12px', marginTop: '4px', color: '#666' }}>
-                    Use the search panel on the left to find containerlogistics insights.
-                  </div>
-                </div>
-              }
-              options={{
-                // Disable worker for production compatibility
-                disableWorker: true,
-                // Use standard fonts to avoid font loading issues
-                standardFontDataUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/standard_fonts/`,
-              }}
+              loading={<div style={{ textAlign: "center" }}>🔄 Loading PDF...</div>}
               onLoadSuccess={({ numPages }) => {
-                console.log("✅ PDF loaded successfully, pages:", numPages);
                 setNumPages(numPages);
-                setPdfLoading(false);
                 setPdfError(null);
+                setPageNumber(1); // reset to page 1 when new doc loads
               }}
               onLoadError={(error) => {
                 console.error("❌ PDF load error:", error);
-                setPdfLoading(false);
-                setPdfError("PDF preview unavailable in production environment, but document analysis completed successfully.");
-              }}
-              onSourceError={(error) => {
-                console.error("❌ PDF source error:", error);
-                setPdfError(`PDF source error: ${error.message || 'Invalid PDF source'}`);
+                setPdfError("PDF preview unavailable");
               }}
             >
-              {numPages && Array.from(new Array(numPages), (el, index) => (
-                <Page
-                  key={`page_${index + 1}`}
-                  pageNumber={index + 1}
-                  renderTextLayer={false}
-                  renderAnnotationLayer={false}
-                  width={Math.min(window.innerWidth * 0.4, 600)}
-                  loading={
-                    <div style={{ textAlign: 'center', padding: '10px' }}>
-                      Loading page {index + 1}...
-                    </div>
-                  }
-                  error={
-                    <div style={{ textAlign: 'center', padding: '10px', color: '#dc3545' }}>
-                      Failed to load page {index + 1}
-                    </div>
-                  }
-                />
-              ))}
+              <Page
+                pageNumber={pageNumber}
+                renderTextLayer={false}
+                renderAnnotationLayer={false}
+                width={Math.min(windowWidth * 0.4, 600) * scale}
+              />
             </Document>
           )}
         </div>
