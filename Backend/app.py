@@ -24,14 +24,9 @@ allowed_origins = [
 ]
 
 # Add environment variable support
-if os.environ.get("FRONTEND_URL"):
-    allowed_origins.append(os.environ.get("FRONTEND_URL"))
 
-CORS(app, 
-     origins=allowed_origins,
-     methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-     allow_headers=['Content-Type', 'Authorization'],
-     supports_credentials=True)
+# Force global CORS for debugging
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
