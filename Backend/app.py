@@ -125,11 +125,23 @@ def analyze():
             return jsonify({'error': 'No buzzwords provided'}), 400
 
         if filename.endswith('.pdf'):
-            text = extract_text_pdf(file)
+            try:
+                text = extract_text_pdf(file)
+            except Exception as pdf_error:
+                logging.error(f"PDF extraction error: {pdf_error}")
+                return jsonify({'error': 'Failed to extract text from PDF. The file may be corrupted or too complex.'}), 400
         elif filename.endswith('.docx'):
-            text = extract_text_docx(file)
+            try:
+                text = extract_text_docx(file)
+            except Exception as docx_error:
+                logging.error(f"DOCX extraction error: {docx_error}")
+                return jsonify({'error': 'Failed to extract text from DOCX.'}), 400
         elif filename.endswith('.txt'):
-            text = extract_text_txt(file)
+            try:
+                text = extract_text_txt(file)
+            except Exception as txt_error:
+                logging.error(f"TXT extraction error: {txt_error}")
+                return jsonify({'error': 'Failed to extract text from TXT.'}), 400
         else:
             return jsonify({'error': 'Unsupported file type'}), 400
 
