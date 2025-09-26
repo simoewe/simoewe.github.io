@@ -41,9 +41,11 @@ function App() {
       formData.append("file", file);
       formData.append("buzzwords", keywords);
       const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:5000";
+      console.log("API URL used for analyze:", apiUrl); // Debugging line
       const res = await fetch(`${apiUrl}/analyze`, {
         method: "POST",
         body: formData,
+        credentials: "include",
       });
       if (!res.ok) throw new Error("Analysis request failed.");
       const data = await res.json();
