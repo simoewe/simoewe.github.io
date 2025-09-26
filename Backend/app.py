@@ -57,7 +57,16 @@ def get_file_size(file):
 def extract_text_pdf(file_stream):
     try:
         reader = PdfReader(file_stream)
-        return ''.join(page.extract_text() or '' for page in reader.pages)
+        text = ''
+        for page_num, page in enumerate(reader.pages):
+            try:
+                page_text = page.extract_text()
+                text += page_text or ''
+            except Exception as page_error:
+                logging.error(f"PDF page {page_num+1} extraction failed: {page_error}")
+                # Optionally, continue to next page or break
+                continue
+        return text
     except Exception as e:
         logging.error(f"PDF extraction failed: {e}")
         raise
