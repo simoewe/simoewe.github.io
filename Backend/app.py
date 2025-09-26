@@ -56,7 +56,28 @@ def get_file_size(file):
 
 def extract_text_pdf(file_stream):
     try:
-        reader = PdfReader(file_stream)
+        # Log file details for debugging
+        try:
+            file_stream.seek(0, os.SEEK_END)
+            size = file_stream.tell()
+            file_stream.seek(0)
+        except Exception:
+            size = 'unknown'
+        logging.info(f"Starting PDF extraction. File size: {size} bytes")
+
+        # Read file into memory safely (limit to 5MB)
+        file_stream.seek(0)
+        file_bytes = file_stream.read()
+        if isinstance(file_bytes, str):
+            file_bytes = file_bytes.encode('utf-8')
+        if len(file_bytes) > 5 * 1024 * 1024:
+            logging.error("PDF file too large for safe processing (limit 5MB)")
+            raise ValueError("PDF file too large for safe processing (limit 5MB)")
+
+        # Use BytesIO for PyPDF2
+        from io import BytesIO
+        pdf_io = BytesIO(file_bytes)
+        reader = PdfReader(pdf_io)
         text = ''
         for page_num, page in enumerate(reader.pages):
             try:
@@ -64,7 +85,6 @@ def extract_text_pdf(file_stream):
                 text += page_text or ''
             except Exception as page_error:
                 logging.error(f"PDF page {page_num+1} extraction failed: {page_error}")
-                # Optionally, continue to next page or break
                 continue
         return text
     except Exception as e:
