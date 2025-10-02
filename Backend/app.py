@@ -233,11 +233,26 @@ def analyze():
             return jsonify({'error': 'Unsupported file type'}), 400
 
         text_lower = text.lower()
-        words = [w.strip(".,!?;:()[]") for w in text_lower.split()]
+        words = [w.strip(".,!?;:()[]") for w in text_lower.split() if w.strip(".,!?;:()[]")]
         total_words = len(words)
-        word_counter = Counter(words)
 
-        freq = {w: word_counter[w] for w in buzzwords}
+        token_index = {}
+
+        def add_token(token, index):
+            if not token:
+                return
+            token_index.setdefault(token, []).append(index)
+
+        for idx, word in enumerate(words):
+            tokens = {word}
+            for part in re.split(r'[-_/\s]+', word):
+                part = part.strip()
+                if part:
+                    tokens.add(part)
+            for token in tokens:
+                add_token(token, idx)
+
+        freq = {w: len(token_index.get(w, [])) for w in buzzwords}
         if all(v == 0 for v in freq.values()):
             return jsonify({'error': 'No buzzwords found in text'}), 400
 
@@ -248,23 +263,27 @@ def analyze():
         window = 5
         for bw in buzzwords:
             snippets = []
-            for i, word in enumerate(words):
-                if word == bw:
-                    left = " ".join(words[max(0, i - window):i])
-                    right = " ".join(words[i + 1:i + 1 + window])
-                    snippets.append(f"... {left} {word} {right} ...")
+            indices = token_index.get(bw, [])
+            seen = set()
+            for i in indices:
+                if i in seen:
+                    continue
+                seen.add(i)
+                left = " ".join(words[max(0, i - window):i])
+                right = " ".join(words[i + 1:i + 1 + window])
+                snippets.append(f"... {left} {words[i]} {right} ...")
             kwic_results[bw] = snippets[:3]
 
         # Collocations
         collocations = {}
         for bw in buzzwords:
             left_neighbors, right_neighbors = [], []
-            for i, word in enumerate(words):
-                if word == bw:
-                    if i > 0:
-                        left_neighbors.append(words[i - 1])
-                    if i < len(words) - 1:
-                        right_neighbors.append(words[i + 1])
+            indices = token_index.get(bw, [])
+            for i in indices:
+                if i > 0:
+                    left_neighbors.append(words[i - 1])
+                if i < len(words) - 1:
+                    right_neighbors.append(words[i + 1])
             collocations[bw] = {
                 "left": Counter(left_neighbors).most_common(3),
                 "right": Counter(right_neighbors).most_common(3)
