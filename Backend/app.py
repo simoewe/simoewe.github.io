@@ -104,6 +104,19 @@ def extract_text_pdf(file_stream):
         from io import BytesIO
         pdf_io = BytesIO(file_bytes)
         reader = PdfReader(pdf_io)
+
+        if reader.is_encrypted:
+            try:
+                decrypt_result = reader.decrypt("")
+                if decrypt_result == 0:
+                    decrypt_result = reader.decrypt(None)
+                if decrypt_result == 0:
+                    logging.error("Encrypted PDF requires a password")
+                    raise ValueError("PDF is encrypted and requires a password")
+                logging.info("Encrypted PDF decrypted with an empty password")
+            except Exception as decrypt_error:
+                logging.error(f"Failed to decrypt PDF: {decrypt_error}")
+                raise ValueError("Failed to decrypt encrypted PDF")
         text = ''
         for page_num, page in enumerate(reader.pages):
             try:
@@ -123,7 +136,7 @@ def extract_text_pdf(file_stream):
 
         pdf_io.seek(0)
         try:
-            miner_text = pdfminer_extract_text(pdf_io)
+            miner_text = pdfminer_extract_text(pdf_io, password="")
             if miner_text and miner_text.strip():
                 logging.info("pdfminer extraction successful")
                 return miner_text
