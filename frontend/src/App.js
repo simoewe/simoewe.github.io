@@ -3,6 +3,7 @@ import Header from "./components/Header";
 import RightPanel from "./components/PdfViewer";
 import KeywordInput from "./components/Input";
 import TextAnalyzer from "./components/TextAnalyzer";
+import { getApiBase } from "./utils/apiBase";
 import './App.css';
 import {
   PanelGroup,
@@ -20,7 +21,17 @@ function App() {
 
   // File is set from right panel
   const handleFileUpload = (uploadedFile) => {
+    setPdfUrl(null);
     setFile(uploadedFile);
+    setAnalysisResult(null);
+    setError("");
+  };
+
+  const handleLibraryPick = (url) => {
+    setPdfUrl(url);
+    setFile(null);
+    setAnalysisResult(null);
+    setError("");
   };
 
   const handleSearch = async () => {
@@ -41,12 +52,11 @@ function App() {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("buzzwords", keywords);
-      const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:5000";
-      console.log("API URL used for analyze:", apiUrl); // Debugging line
-      const res = await fetch(`${apiUrl}/analyze`, {
+      const apiUrl = getApiBase();
+      console.log("API URL used for analyze:", apiUrl || "(same origin)"); // Debugging line
+      const res = await fetch(`${apiUrl ? `${apiUrl}/analyze` : "/analyze"}`, {
         method: "POST",
         body: formData,
-        credentials: "include",
       });
       if (!res.ok) throw new Error("Analysis request failed.");
       const data = await res.json();
@@ -60,7 +70,7 @@ function App() {
 
   return (
     <div className="app">
-      <Header />
+      <Header onPickFromLibrary={handleLibraryPick} />
 
       <div className="body">
         <PanelGroup direction="horizontal" autoSaveId="layout">
@@ -102,11 +112,19 @@ function App() {
             <div className="pane-content">
               <div className="inner-container full">
                 {pdfUrl ? (
-                  <iframe
-                    title="pdf-viewer"
-                    src={pdfUrl}
-                    style={{ width: "100%", height: "100%", border: "none" }}
-                  />
+                  <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
+                      <button onClick={() => setPdfUrl(null)}>Zurück zur Upload-Ansicht</button>
+                      <a href={pdfUrl} target="_blank" rel="noreferrer">
+                        Im neuen Tab öffnen
+                      </a>
+                    </div>
+                    <iframe
+                      title="pdf-viewer"
+                      src={pdfUrl}
+                      style={{ flex: 1, width: "100%", border: "none" }}
+                    />
+                  </div>
                 ) : (
                   <RightPanel onFileUpload={handleFileUpload} />
                 )}

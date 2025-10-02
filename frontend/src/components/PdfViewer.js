@@ -71,6 +71,7 @@ function RightPanel({ onFileUpload }) {
     if (isPdf && file.size <= 5 * 1024 * 1024) {
       const fileUrl = URL.createObjectURL(file);
       setPdfFile(fileUrl);
+      setUploadStatus("✅ PDF geladen – bereit für die Analyse");
 
       if (onFileUpload) {
         onFileUpload(file);

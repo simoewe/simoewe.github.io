@@ -485,6 +485,22 @@ if __name__ == '__main__':
 @app.route('/library', methods=['GET'])
 def library():
     try:
+        required_env = [
+            "OCI_BUCKET",
+            "PAR_BASE_URL",
+            "OCI_REGION",
+            "OCI_NAMESPACE",
+            "OCI_S3_ACCESS_KEY",
+            "OCI_S3_SECRET_KEY"
+        ]
+        missing = [var for var in required_env if not os.environ.get(var)]
+        if missing:
+            logging.warning("Library requested but missing environment variables: %s", missing)
+            return jsonify({
+                "items": [],
+                "warning": "Library storage is not configured."
+            })
+
         bucket = os.environ["OCI_BUCKET"]
         par_base = os.environ["PAR_BASE_URL"].rstrip('/')
         prefix = request.args.get('prefix', '')  # optional: Ordner/prefix

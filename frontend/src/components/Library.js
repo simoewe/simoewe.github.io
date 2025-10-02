@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { getApiBase } from "../utils/apiBase";
 
 export default function Library({ onSelect }) {
   const [items, setItems] = useState([]);
@@ -8,25 +9,15 @@ export default function Library({ onSelect }) {
   useEffect(() => {
     async function load() {
       try {
-        const envBase = process.env.REACT_APP_API_URL && process.env.REACT_APP_API_URL.trim();
-        let base = envBase;
-
-        if (!base && typeof window !== "undefined") {
-          const { origin, hostname, protocol } = window.location;
-          if (hostname === "localhost" || hostname === "127.0.0.1") {
-            base = "http://localhost:5000";
-          } else if (protocol.startsWith("http") && origin) {
-            base = origin;
-          }
-        }
-
-        if (base) {
-          base = base.replace(/\/$/, "");
-        }
-
-        const resp = await fetch(`${base || ""}/library`);
+        const base = getApiBase();
+        const resp = await fetch(`${base ? `${base}/library` : "/library"}`);
         const data = await resp.json();
         if (!resp.ok) throw new Error(data.error || "Failed to load");
+        if (data.warning) {
+          setErr(data.warning);
+          setItems([]);
+          return;
+        }
         setItems((data.items || []).filter(it => it.url && it.name));
       } catch (e) {
         setErr(e.message);
