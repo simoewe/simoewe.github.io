@@ -46,7 +46,7 @@ export default function Library({ onSelect }) {
       <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
         {items.map(it => (
           <li key={it.key} style={{ marginBottom: 8 }}>
-            <button onClick={() => onSelect(it.url)}>
+            <button onClick={() => onSelect && onSelect(it)}>
               {it.name}
             </button>
             {typeof it.size === "number" && (

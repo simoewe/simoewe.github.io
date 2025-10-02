@@ -41,8 +41,8 @@ export default function Header({ onPickFromLibrary }) {
           }}
         >
           <Library
-            onSelect={(url) => {
-              onPickFromLibrary && onPickFromLibrary(url);
+            onSelect={(item) => {
+              onPickFromLibrary && onPickFromLibrary(item);
               setShowLib(false);
             }}
           />

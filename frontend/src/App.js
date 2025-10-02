@@ -16,6 +16,7 @@ function App() {
   const [file, setFile] = useState(null);
   const [analysisResult, setAnalysisResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [libraryLoading, setLibraryLoading] = useState(false);
   const [error, setError] = useState("");
   const [pdfUrl, setPdfUrl] = useState(null);
 
@@ -25,16 +26,50 @@ function App() {
     setFile(uploadedFile);
     setAnalysisResult(null);
     setError("");
+    setLibraryLoading(false);
   };
 
-  const handleLibraryPick = (url) => {
+  const handleLibraryPick = async (selection) => {
+    const item = typeof selection === "string" ? { url: selection } : selection;
+    const url = item?.url;
+
+    if (!url) {
+      setError("Selected library item has no download URL.");
+      return;
+    }
+
+    setLibraryLoading(true);
     setPdfUrl(url);
     setFile(null);
     setAnalysisResult(null);
     setError("");
+
+    try {
+      const response = await fetch(url, { mode: "cors" });
+      if (!response.ok) {
+        throw new Error(`Failed to fetch document (${response.status})`);
+      }
+      const blob = await response.blob();
+      const name = item?.name || item?.key?.split("/").pop() || "library-document.pdf";
+      const fileFromLibrary = new File([blob], name, {
+        type: blob.type || "application/pdf"
+      });
+      setFile(fileFromLibrary);
+    } catch (fetchErr) {
+      console.error("Failed to load library document", fetchErr);
+      setError("Failed to load document from library. Please try again.");
+      setPdfUrl(null);
+    } finally {
+      setLibraryLoading(false);
+    }
   };
 
   const handleSearch = async () => {
+    if (libraryLoading) {
+      setError("Document is still loading. Please wait a moment.");
+      return;
+    }
+
     setLoading(true);
     setError("");
     setAnalysisResult(null);
@@ -96,9 +131,9 @@ function App() {
                       <button 
                         onClick={handleSearch} 
                         style={{ height: '40px', width: '100%' }}
-                        disabled={loading}
+                        disabled={loading || libraryLoading}
                       >
-                        {loading ? "Analyzing..." : "Analyze"}
+                        {libraryLoading ? "Loading document..." : loading ? "Analyzing..." : "Analyze"}
                       </button>
                       {error && <div style={{ color: 'red', marginTop: '8px' }}>{error}</div>}
                     </div>
