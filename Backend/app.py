@@ -3,6 +3,10 @@ from flask_cors import CORS
 import os
 import io
 from PyPDF2 import PdfReader
+try:
+    from pdfminer.high_level import extract_text as pdfminer_extract_text
+except ImportError:  # pdfminer is optional but preferred for complex PDFs
+    pdfminer_extract_text = None
 from docx import Document
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
@@ -108,7 +112,26 @@ def extract_text_pdf(file_stream):
             except Exception as page_error:
                 logging.error(f"PDF page {page_num+1} extraction failed: {page_error}")
                 continue
-        return text
+        if text and text.strip():
+            return text
+
+        logging.info("PyPDF2 returned little/no text; attempting pdfminer fallback")
+
+        if not pdfminer_extract_text:
+            logging.warning("pdfminer.six not installed; cannot improve extraction result")
+            return text
+
+        pdf_io.seek(0)
+        try:
+            miner_text = pdfminer_extract_text(pdf_io)
+            if miner_text and miner_text.strip():
+                logging.info("pdfminer extraction successful")
+                return miner_text
+            logging.warning("pdfminer extraction yielded empty text")
+            return miner_text or text
+        except Exception as miner_error:
+            logging.error(f"pdfminer extraction failed: {miner_error}")
+            return text
     except Exception as e:
         logging.error(f"PDF extraction failed: {e}")
         raise
