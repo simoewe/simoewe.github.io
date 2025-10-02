@@ -16,6 +16,7 @@ function App() {
   const [analysisResult, setAnalysisResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [pdfUrl, setPdfUrl] = useState(null);
 
   // File is set from right panel
   const handleFileUpload = (uploadedFile) => {
@@ -96,12 +97,19 @@ function App() {
               </PanelGroup>
             </div>
           </Panel>
-          <PanelResizeHandle className="custom-handle" />
           {/* Right panel */}
           <Panel defaultSize={50} minSize={10}>
             <div className="pane-content">
               <div className="inner-container full">
-                <RightPanel onFileUpload={handleFileUpload} />
+                {pdfUrl ? (
+                  <iframe
+                    title="pdf-viewer"
+                    src={pdfUrl}
+                    style={{ width: "100%", height: "100%", border: "none" }}
+                  />
+                ) : (
+                  <RightPanel onFileUpload={handleFileUpload} />
+                )}
               </div>
             </div>
           </Panel>

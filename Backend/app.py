@@ -11,6 +11,26 @@ import logging
 from textblob import TextBlob
 from collections import Counter
 import re
+import boto3
+from botocore.config import Config
+from urllib.parse import quote
+
+# S3-kompatible OCI-API - Für Oracle Anbindung
+def get_s3_client():
+    region = os.environ["OCI_REGION"]
+    namespace = os.environ["OCI_NAMESPACE"]
+    access_key = os.environ["OCI_S3_ACCESS_KEY"]
+    secret_key = os.environ["OCI_S3_SECRET_KEY"]
+    endpoint = f"https://{namespace}.compat.objectstorage.{region}.oraclecloud.com"
+    return boto3.client(
+        "s3",
+        region_name=region,
+        aws_access_key_id=access_key,
+        aws_secret_access_key=secret_key,
+        endpoint_url=endpoint,
+        config=Config(signature_version="s3v4")
+    )
+
 
 # Initialize Flask
 app = Flask(__name__, static_folder="../frontend/build", static_url_path="/")
@@ -460,3 +480,47 @@ def search():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
+
+
+@app.route('/library', methods=['GET'])
+def library():
+    try:
+        bucket = os.environ["OCI_BUCKET"]
+        par_base = os.environ["PAR_BASE_URL"].rstrip('/')
+        prefix = request.args.get('prefix', '')  # optional: Ordner/prefix
+        s3 = get_s3_client()
+
+        objects = []
+        kwargs = {
+            "Bucket": bucket,
+            "Prefix": prefix
+        }
+
+        while True:
+            resp = s3.list_objects_v2(**kwargs)
+            for item in resp.get("Contents", []):
+                key = item["Key"]
+                if not key.lower().endswith(".pdf"):
+                    continue
+                # URL über den Bucket-PAR bauen
+                url = f"{par_base}/{quote(key)}"
+                objects.append({
+                    "key": key,
+                    "name": key.split('/')[-1],
+                    "size": item.get("Size", 0),
+                    "last_modified": item.get("LastModified").isoformat() if item.get("LastModified") else None,
+                    "url": url
+                })
+
+            if resp.get("IsTruncated"):
+                kwargs["ContinuationToken"] = resp.get("NextContinuationToken")
+            else:
+                break
+
+        # Sortiere optional nach Name (oder last_modified)
+        objects.sort(key=lambda x: x["name"].lower())
+
+        return jsonify({"items": objects})
+    except Exception as e:
+        logging.exception("Failed to list bucket contents")
+        return jsonify({"error": "Failed to list library"}), 500
