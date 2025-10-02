@@ -58,8 +58,14 @@ function App() {
         method: "POST",
         body: formData,
       });
-      if (!res.ok) throw new Error("Analysis request failed.");
+      const contentType = res.headers.get("content-type") || "";
+      if (!contentType.includes("application/json")) {
+        const text = await res.text();
+        throw new Error(text || `Unexpected response (${res.status})`);
+      }
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Analysis request failed.");
+      if (data.error) throw new Error(data.error);
       setAnalysisResult(data);
     } catch (err) {
       setError(err.message);

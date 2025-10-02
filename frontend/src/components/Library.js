@@ -11,16 +11,25 @@ export default function Library({ onSelect }) {
       try {
         const base = getApiBase();
         const resp = await fetch(`${base ? `${base}/library` : "/library"}`);
+        const contentType = resp.headers.get("content-type") || "";
+
+        if (!contentType.includes("application/json")) {
+          const text = await resp.text();
+          throw new Error(text || `Unexpected response (${resp.status})`);
+        }
+
         const data = await resp.json();
-        if (!resp.ok) throw new Error(data.error || "Failed to load");
+        if (!resp.ok) throw new Error(data.error || `Failed to load (status ${resp.status})`);
         if (data.warning) {
           setErr(data.warning);
           setItems([]);
           return;
         }
+        setErr(null);
         setItems((data.items || []).filter(it => it.url && it.name));
       } catch (e) {
         setErr(e.message);
+        setItems([]);
       } finally {
         setLoading(false);
       }
