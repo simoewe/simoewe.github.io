@@ -37,14 +37,16 @@ app = Flask(__name__, static_folder="../frontend/build", static_url_path="/")
 
 # Configure CORS for Render deployment
 allowed_origins = [
-    "https://simoewe-github-io-1-cdi0.onrender.com",  # Your frontend URL
+    "https://simoewe-github-io-1-cdi0.onrender.com",  # legacy Render deployment
     "http://localhost:3000",  # Local development
     "https://simoewe.github.io",  # GitHub Pages if used
 ]
 
-# Add environment variable support
-if os.environ.get("FRONTEND_URL"):
-    allowed_origins.append(os.environ.get("FRONTEND_URL"))
+# Add environment variable support (accept both FRONTEND_URL and FRONTEND_ORIGIN)
+for env_key in ["FRONTEND_URL", "FRONTEND_ORIGIN"]:
+    env_value = os.environ.get(env_key)
+    if env_value:
+        allowed_origins.append(env_value)
 
 CORS(app, 
     origins=allowed_origins,

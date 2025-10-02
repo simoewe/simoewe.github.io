@@ -10,6 +10,7 @@ export function getApiBase() {
 
   let base =
     fromEnv('REACT_APP_API_URL') ||
+    fromEnv('VITE_API_URL') ||
     fromEnv('APP_API_URL');
 
   if (typeof window !== 'undefined') {
@@ -17,6 +18,7 @@ export function getApiBase() {
       base,
       window.__APP_API_URL__,
       window.APP_API_URL,
+      window.VITE_API_URL,
       window.__RUNTIME_CONFIG__ && window.__RUNTIME_CONFIG__.API_URL,
       window.__RUNTIME_CONFIG__ && window.__RUNTIME_CONFIG__.apiUrl,
     ].filter((candidate) => typeof candidate === 'string' && candidate.trim());
