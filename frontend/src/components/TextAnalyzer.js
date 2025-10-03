@@ -28,6 +28,28 @@ const TextAnalyzer = ({ analysisResult, loading, analysisProgress = 0, analysisS
     return 'Neutral';
   };
 
+  const uniqueCustomKeywords = useMemo(() => {
+    const seen = new Set();
+    const unique = [];
+    customKeywords.forEach((keyword) => {
+      const trimmed = keyword.trim();
+      if (!trimmed) {
+        return;
+      }
+      const normalized = trimmed.toLowerCase();
+      if (seen.has(normalized)) {
+        return;
+      }
+      seen.add(normalized);
+      unique.push(trimmed);
+    });
+    return unique;
+  }, [customKeywords]);
+
+  const customKeywordSet = useMemo(() => {
+    return new Set(uniqueCustomKeywords.map((keyword) => keyword.toLowerCase()));
+  }, [uniqueCustomKeywords]);
+
   if (loading) {
     const clampedProgress = Math.max(0, Math.min(analysisProgress, 100));
     return (
@@ -88,28 +110,6 @@ const TextAnalyzer = ({ analysisResult, loading, analysisProgress = 0, analysisS
   }
 
   const { image, kwic, collocations, frequencies, densities, sentiment, readability, trends } = analysisResult;
-
-  const uniqueCustomKeywords = useMemo(() => {
-    const seen = new Set();
-    const unique = [];
-    customKeywords.forEach((keyword) => {
-      const trimmed = keyword.trim();
-      if (!trimmed) {
-        return;
-      }
-      const normalized = trimmed.toLowerCase();
-      if (seen.has(normalized)) {
-        return;
-      }
-      seen.add(normalized);
-      unique.push(trimmed);
-    });
-    return unique;
-  }, [customKeywords]);
-
-  const customKeywordSet = useMemo(() => {
-    return new Set(uniqueCustomKeywords.map((keyword) => keyword.toLowerCase()));
-  }, [uniqueCustomKeywords]);
 
   const frequencyEntries = frequencies ? Object.entries(frequencies) : [];
   const technologyFrequencyEntries = frequencyEntries.filter(([keyword]) => !customKeywordSet.has(keyword.toLowerCase()));
