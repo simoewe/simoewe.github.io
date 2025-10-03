@@ -46,10 +46,10 @@ export default function Header({ onPickFromLibrary, technologyTerms }) {
   };
 
   const closeCodePrompt = () => {
-    if (verifyingCode) return;
     setShowCodePrompt(false);
     setCodeInput("");
     setCodeError("");
+    setVerifyingCode(false);
   };
 
   const handleCodeSubmit = async (event) => {
@@ -59,6 +59,11 @@ export default function Header({ onPickFromLibrary, technologyTerms }) {
     const trimmed = codeInput.trim();
     if (!trimmed) {
       setCodeError("Bitte Zugangscode eingeben.");
+      return;
+    }
+
+    if (trimmed.length > 128) {
+      setCodeError("Code ist zu lang. Bitte kürzeren Zugangscode verwenden.");
       return;
     }
 
@@ -91,19 +96,18 @@ export default function Header({ onPickFromLibrary, technologyTerms }) {
         setShowLib(true);
         setCodeInput("");
         setCodeError("");
-        setVerifyingCode(false);
         return;
       }
 
       if (resp.status === 403 || data.valid === false) {
         setCodeError("Code ist ungültig. Bitte erneut versuchen.");
-        setVerifyingCode(false);
         return;
       }
 
       throw new Error(data.error || "Verifikation fehlgeschlagen.");
     } catch (err) {
       setCodeError(err.message || "Verifikation fehlgeschlagen.");
+    } finally {
       setVerifyingCode(false);
     }
   };
