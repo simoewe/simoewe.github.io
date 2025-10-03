@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Header from "./components/Header";
 import RightPanel from "./components/PdfViewer";
 import KeywordInput from "./components/Input";
@@ -19,10 +19,34 @@ function App() {
   const [libraryLoading, setLibraryLoading] = useState(false);
   const [error, setError] = useState("");
   const [pdfUrl, setPdfUrl] = useState(null);
+  const localPdfUrlRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (localPdfUrlRef.current) {
+        URL.revokeObjectURL(localPdfUrlRef.current);
+        localPdfUrlRef.current = null;
+      }
+    };
+  }, []);
 
   // File is set from right panel
   const handleFileUpload = (uploadedFile) => {
-    setPdfUrl(null);
+    if (localPdfUrlRef.current) {
+      URL.revokeObjectURL(localPdfUrlRef.current);
+      localPdfUrlRef.current = null;
+    }
+
+    if (!uploadedFile) {
+      setFile(null);
+      setPdfUrl(null);
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(uploadedFile);
+    localPdfUrlRef.current = objectUrl;
+
+    setPdfUrl(objectUrl);
     setFile(uploadedFile);
     setAnalysisResult(null);
     setError("");
@@ -30,6 +54,11 @@ function App() {
   };
 
   const handleLibraryPick = async (selection) => {
+    if (localPdfUrlRef.current) {
+      URL.revokeObjectURL(localPdfUrlRef.current);
+      localPdfUrlRef.current = null;
+    }
+
     const item = typeof selection === "string" ? { url: selection } : selection;
     const url = item?.url;
 
@@ -62,6 +91,14 @@ function App() {
     } finally {
       setLibraryLoading(false);
     }
+  };
+
+  const handleBackToUpload = () => {
+    if (localPdfUrlRef.current) {
+      URL.revokeObjectURL(localPdfUrlRef.current);
+      localPdfUrlRef.current = null;
+    }
+    setPdfUrl(null);
   };
 
   const handleSearch = async () => {
@@ -155,7 +192,7 @@ function App() {
                 {pdfUrl ? (
                   <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
-                      <button onClick={() => setPdfUrl(null)}>Zurück zur Upload-Ansicht</button>
+                      <button onClick={handleBackToUpload}>Zurück zur Upload-Ansicht</button>
                       <a href={pdfUrl} target="_blank" rel="noreferrer">
                         Im neuen Tab öffnen
                       </a>
