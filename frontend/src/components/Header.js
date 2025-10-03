@@ -12,6 +12,8 @@ export default function Header({ onPickFromLibrary }) {
   const [codeError, setCodeError] = useState("");
   const [verifyingCode, setVerifyingCode] = useState(false);
 
+  const closeLibrary = () => setShowLib(false);
+
   const handleLibraryClick = () => {
     if (libraryAccessGranted) {
       setShowLib((prev) => !prev);
@@ -107,26 +109,37 @@ export default function Header({ onPickFromLibrary }) {
 
       {showLib && (
         <div
-          style={{
-            position: "fixed",
-            right: 16,
-            top: 70,
-            width: 320,
-            maxHeight: "70vh",
-            overflow: "auto",
-            background: "#fff",
-            border: "1px solid #ddd",
-            borderRadius: 8,
-            boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-            zIndex: 1000
-          }}
+          className="modal-backdrop"
+          role="presentation"
+          onClick={closeLibrary}
         >
-          <Library
-            onSelect={(item) => {
-              onPickFromLibrary && onPickFromLibrary(item);
-              setShowLib(false);
-            }}
-          />
+          <div
+            className="modal-card library-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="library-modal-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-header">
+              <h2 id="library-modal-title">Library</h2>
+              <button
+                type="button"
+                className="modal-close"
+                onClick={closeLibrary}
+                aria-label="Library schließen"
+              >
+                ×
+              </button>
+            </div>
+            <div className="library-modal-body">
+              <Library
+                onSelect={(item) => {
+                  onPickFromLibrary && onPickFromLibrary(item);
+                  closeLibrary();
+                }}
+              />
+            </div>
+          </div>
         </div>
       )}
 

@@ -889,6 +889,30 @@ textarea:focus {
   min-width: 110px;
 }
 
+.library-modal {
+  max-width: 560px;
+  width: min(90vw, 560px);
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
+.library-modal .modal-header {
+  padding: 20px 24px 12px;
+  margin-bottom: 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.library-modal .modal-header h2 {
+  font-size: 18px;
+}
+
+.library-modal-body {
+  padding: 12px 24px 24px;
+  overflow-y: auto;
+}
+
 .library-loading {
   display: flex;
   align-items: center;
