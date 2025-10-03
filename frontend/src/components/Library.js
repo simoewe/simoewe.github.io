@@ -37,23 +37,40 @@ export default function Library({ onSelect }) {
     load();
   }, []);
 
-  if (loading) return <div>Loading…</div>;
-  if (err) return <div style={{ color: "red" }}>{err}</div>;
+  if (loading) {
+    return (
+      <div className="library-loading" role="status" aria-live="polite">
+        <div className="spinner" aria-hidden="true" />
+        <div>
+          <p className="library-loading-title">Bibliothek wird geladen…</p>
+          <p className="library-loading-hint">
+            Hinweis: Der erste Abruf kann aufgrund der Cloud-Anbindung bis zu einer Minute dauern.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (err) {
+    return (
+      <div className="library-error" role="alert">
+        {err}
+      </div>
+    );
+  }
 
   return (
-    <div style={{ padding: 12 }}>
+    <div className="library-panel">
       <h3>Library</h3>
-      <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
-        {items.map(it => (
-          <li key={it.key} style={{ marginBottom: 8 }}>
+      <ul>
+        {items.map((it) => (
+          <li key={it.key || it.name}>
             <button onClick={() => onSelect && onSelect(it)}>
-              {it.name}
+              <span>{it.name}</span>
+              {typeof it.size === "number" && (
+                <small>{(it.size / 1024 / 1024).toFixed(2)} MB</small>
+              )}
             </button>
-            {typeof it.size === "number" && (
-              <small style={{ marginLeft: 8 }}>
-                {(it.size / 1024 / 1024).toFixed(2)} MB
-              </small>
-            )}
           </li>
         ))}
       </ul>
