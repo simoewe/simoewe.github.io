@@ -1,18 +1,39 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import UHH_Logo from "../UHH_Logo.svg.png";
 import Library from "./Library";
 import { getApiBase } from "../utils/apiBase";
 
-export default function Header({ onPickFromLibrary }) {
+export default function Header({ onPickFromLibrary, technologyTerms }) {
   const [showLib, setShowLib] = useState(false);
   const [showImpressum, setShowImpressum] = useState(false);
   const [showCodePrompt, setShowCodePrompt] = useState(false);
+  const [showTechnologies, setShowTechnologies] = useState(false);
   const [libraryAccessGranted, setLibraryAccessGranted] = useState(false);
   const [codeInput, setCodeInput] = useState("");
   const [codeError, setCodeError] = useState("");
   const [verifyingCode, setVerifyingCode] = useState(false);
 
   const closeLibrary = () => setShowLib(false);
+
+  const { defaultTerms = [], customTerms = [] } = technologyTerms || {};
+  const uniqueDefaultTerms = useMemo(
+    () => Array.from(new Set(defaultTerms)).sort((a, b) => a.localeCompare(b)),
+    [defaultTerms]
+  );
+  const uniqueCustomTerms = useMemo(
+    () =>
+      Array.from(new Set(customTerms.map((term) => term.trim()).filter(Boolean))).sort((a, b) =>
+        a.localeCompare(b)
+      ),
+    [customTerms]
+  );
+  const combinedTerms = useMemo(
+    () =>
+      Array.from(
+        new Set([...uniqueDefaultTerms, ...uniqueCustomTerms].map((term) => term.trim()))
+      ).sort((a, b) => a.localeCompare(b)),
+    [uniqueDefaultTerms, uniqueCustomTerms]
+  );
 
   const handleLibraryClick = () => {
     if (libraryAccessGranted) {
@@ -95,12 +116,13 @@ export default function Header({ onPickFromLibrary }) {
         </div>
 
         <ul className="nav-rechts">
-          <li>Option</li>
+          <li>
+            <button onClick={() => setShowTechnologies(true)}>Technologien</button>
+          </li>
           <li>Option</li>
           <li>
             <button onClick={handleLibraryClick}>Library</button>
           </li>
-          <li>Kontakt</li>
           <li>
             <button onClick={() => setShowImpressum(true)}>Impressum</button>
           </li>
@@ -245,6 +267,74 @@ export default function Header({ onPickFromLibrary }) {
                   akademischen Zwecken. Eine kommerzielle Nutzung, Vervielfältigung oder Weitergabe der im Rahmen
                   des Projekts verwendeten Dokumente ist nicht gestattet.
                 </p>
+              </section>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showTechnologies && (
+        <div
+          className="modal-backdrop"
+          role="presentation"
+          onClick={() => setShowTechnologies(false)}
+        >
+          <div
+            className="modal-card technologies-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="technologies-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-header">
+              <h2 id="technologies-title">Technologie-Begriffe</h2>
+              <button
+                type="button"
+                className="modal-close"
+                onClick={() => setShowTechnologies(false)}
+                aria-label="Technologie-Übersicht schließen"
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <section>
+                <h3>Standardbegriffe</h3>
+                {uniqueDefaultTerms.length > 0 ? (
+                  <ul className="technology-list">
+                    {uniqueDefaultTerms.map((term) => (
+                      <li key={`default-${term}`}>{term}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p>Keine Standardbegriffe konfiguriert.</p>
+                )}
+              </section>
+
+              <section>
+                <h3>Eigene Stichwörter</h3>
+                {uniqueCustomTerms.length > 0 ? (
+                  <ul className="technology-list">
+                    {uniqueCustomTerms.map((term) => (
+                      <li key={`custom-${term}`}>{term}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p>Derzeit wurden keine zusätzlichen Stichwörter hinzugefügt.</p>
+                )}
+              </section>
+
+              <section>
+                <h3>Gesamte Analysebegriffe</h3>
+                {combinedTerms.length > 0 ? (
+                  <ul className="technology-list columns">
+                    {combinedTerms.map((term) => (
+                      <li key={`combined-${term}`}>{term}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p>Keine Begriffe vorhanden.</p>
+                )}
               </section>
             </div>
           </div>

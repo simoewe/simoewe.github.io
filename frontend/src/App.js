@@ -10,6 +10,7 @@ import {
   Panel,
   PanelResizeHandle
 } from 'react-resizable-panels';
+import { DEFAULT_TECHNOLOGY_TERMS } from "./constants/technologies";
 
 function App() {
   const [keywords, setKeywords] = useState("");
@@ -219,7 +220,13 @@ function App() {
 
   return (
     <div className="app">
-      <Header onPickFromLibrary={handleLibraryPick} />
+      <Header
+        onPickFromLibrary={handleLibraryPick}
+        technologyTerms={{
+          defaultTerms: DEFAULT_TECHNOLOGY_TERMS,
+          customTerms: userKeywordList
+        }}
+      />
 
       <div className="body">
         <PanelGroup direction="horizontal" autoSaveId="layout">
@@ -235,7 +242,7 @@ function App() {
                         onChange={(e) => setKeywords(e.target.value)} 
                       />
                     </div>
-                    <div style={{ background: '#fff', zIndex: 2, paddingBottom: '8px', boxShadow: '0 -2px 6px rgba(0,0,0,0.04)' }}>
+                    <div className="analyze-footer">
                       <button 
                         onClick={handleSearch} 
                         style={{ height: '40px', width: '100%' }}
@@ -294,3 +301,10 @@ function App() {
 }
 
 export default App;
+  const userKeywordList = useMemo(() =>
+    keywords
+      .split(',')
+      .map((k) => k.trim())
+      .filter(Boolean),
+    [keywords]
+  );

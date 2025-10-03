@@ -763,7 +763,147 @@
   .metric-card {
     padding: 16px;
   }
-  
+
+  .table-header,
+  .table-row {
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .loading-container,
+  .empty-state,
+  .error-state {
+    color: #e2e8f0;
+  }
+
+  .loading-spinner {
+    border: 3px solid rgba(148, 163, 184, 0.15);
+    border-top: 3px solid #f87171;
+  }
+
+  .loading-step {
+    background: rgba(30, 41, 59, 0.7);
+    border-color: rgba(148, 163, 184, 0.2);
+    color: #cbd5f5;
+  }
+
+  .loading-step-active {
+    background: rgba(226, 0, 26, 0.18);
+    border-color: rgba(226, 0, 26, 0.3);
+    color: #fca5a5;
+  }
+
+  .progress-bar {
+    background: rgba(148, 163, 184, 0.2);
+  }
+
+  .progress-percentage {
+    color: #cbd5f5;
+  }
+
+  .analyzer-header {
+    background: transparent;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  }
+
+  .analyzer-header h2 {
+    color: #f8fafc;
+  }
+
+  .tab-navigation {
+    background: rgba(30, 41, 59, 0.7);
+  }
+
+  .tab {
+    color: #cbd5f5;
+  }
+
+  .tab-active {
+    background: linear-gradient(135deg, #fb7185 0%, #f43f5e 100%);
+  }
+
+  .stat-card {
+    background: rgba(30, 41, 59, 0.85);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    box-shadow: 0 16px 32px rgba(8, 11, 19, 0.5);
+  }
+
+  .stat-card h4,
+  .count,
+  .context-text,
+  .wordcloud-caption,
+  .show-more,
+  .collocation-side h5 {
+    color: #cbd5f5;
+  }
+
+  .stat-value,
+  .keyword,
+  .trend-name {
+    color: #f8fafc;
+  }
+
+  .chart-card,
+  .metric-card {
+    background: rgba(30, 41, 59, 0.85);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    box-shadow: 0 16px 32px rgba(8, 11, 19, 0.5);
+  }
+
+  .bar-container {
+    background: rgba(148, 163, 184, 0.2);
+  }
+
+  .wordcloud-image {
+    box-shadow: 0 20px 42px rgba(8, 11, 19, 0.6);
+  }
+
+  .keyword-title {
+    border-bottom-color: rgba(248, 113, 113, 0.4);
+  }
+
+  .context-item {
+    background: rgba(30, 41, 59, 0.7);
+    border-left-color: #fb7185;
+  }
+
+  .collocation-tag {
+    background: rgba(148, 163, 184, 0.2);
+    color: #f8fafc;
+  }
+
+  .trend-item {
+    border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  }
+
+  .trend-summary,
+  .trend-context p {
+    color: #cbd5f5;
+  }
+
+  .metrics-grid .metric-card {
+    background: rgba(30, 41, 59, 0.85);
+  }
+
+  .table-header {
+    background: rgba(30, 41, 59, 0.9);
+    color: #f8fafc;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  }
+
+  .table-row {
+    background: rgba(17, 24, 39, 0.9);
+    color: #e2e8f0;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+  }
+
+  .table-row:nth-child(even) {
+    background: rgba(30, 41, 59, 0.65);
+  }
+}
+
   .table-header,
   .table-row {
     padding: 6px 8px;
