@@ -53,7 +53,7 @@ const TextAnalyzer = ({ analysisResult, loading }) => {
         </div>
         <div className="empty-state">
           <div className="empty-icon">📄</div>
-          <p>Upload a document and enter keywords to begin analysis</p>
+          <p>Upload a document to begin analysis. Adding your own keywords is optional.</p>
         </div>
       </div>
     );
@@ -74,6 +74,13 @@ const TextAnalyzer = ({ analysisResult, loading }) => {
   }
 
   const { image, kwic, collocations, frequencies, densities, sentiment, readability, trends } = analysisResult;
+
+  const frequencyEntries = frequencies ? Object.entries(frequencies) : [];
+  const keywordsFoundCount = frequencyEntries.filter(([, value]) => value > 0).length;
+  const totalOccurrences = frequencyEntries.reduce((sum, [, value]) => sum + value, 0);
+  const maxFrequencyValue = frequencyEntries.length > 0
+    ? Math.max(...frequencyEntries.map(([, value]) => value))
+    : 0;
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: '📊' },
@@ -107,14 +114,12 @@ const TextAnalyzer = ({ analysisResult, loading }) => {
             {frequencies && densities && (
               <div className="stat-cards">
                 <div className="stat-card">
-                  <h4>Keywords Found</h4>
-                  <div className="stat-value">{Object.keys(frequencies).length}</div>
+                  <h4>Technology Keywords Found</h4>
+                  <div className="stat-value">{keywordsFoundCount}</div>
                 </div>
                 <div className="stat-card">
                   <h4>Total Occurrences</h4>
-                  <div className="stat-value">
-                    {Object.values(frequencies).reduce((sum, freq) => sum + freq, 0)}
-                  </div>
+                  <div className="stat-value">{totalOccurrences}</div>
                 </div>
                 {sentiment && (
                   <div className="stat-card sentiment-card">
@@ -133,32 +138,39 @@ const TextAnalyzer = ({ analysisResult, loading }) => {
 
             {/* Frequency Chart */}
             {frequencies && densities && (
-              <div className="chart-card">
-                <h3>Keyword Frequencies</h3>
-                <div className="frequency-bars">
-                  {Object.entries(frequencies)
-                    .sort(([,a], [,b]) => b - a)
-                    .slice(0, 10)
-                    .map(([keyword, freq]) => {
-                      const maxFreq = Math.max(...Object.values(frequencies));
-                      const width = (freq / maxFreq) * 100;
-                      return (
-                        <div key={keyword} className="frequency-bar">
-                          <div className="bar-label">
-                            <span className="keyword">{keyword}</span>
-                            <span className="count">{freq}</span>
-                          </div>
-                          <div className="bar-container">
-                            <div 
-                              className="bar-fill" 
-                              style={{ width: `${width}%` }}
-                            ></div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                <div className="chart-card">
+                  <h3>Technology Keyword Frequencies</h3>
+                  <div className="frequency-bars">
+                    {frequencyEntries.filter(([, value]) => value > 0).length > 0 ? (
+                      frequencyEntries
+                        .filter(([, value]) => value > 0)
+                        .sort(([,a], [,b]) => b - a)
+                        .slice(0, 10)
+                        .map(([keyword, freq]) => {
+                          const baseline = maxFrequencyValue || 1;
+                          const width = baseline > 0 ? (freq / baseline) * 100 : 0;
+                          return (
+                            <div key={keyword} className="frequency-bar">
+                              <div className="bar-label">
+                                <span className="keyword">{keyword}</span>
+                                <span className="count">{freq}</span>
+                              </div>
+                              <div className="bar-container">
+                                <div 
+                                  className="bar-fill" 
+                                  style={{ width: `${width}%` }}
+                                ></div>
+                              </div>
+                            </div>
+                          );
+                        })
+                    ) : (
+                      <div className="no-keyword-results">
+                        No technology keywords detected in this document.
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
             )}
           </div>
         )}

@@ -68,6 +68,74 @@ ALLOWED_EXTENSIONS = {'.pdf', '.docx', '.txt'}
 MAX_PDF_PAGES = 300
 MAX_WORDS_ANALYSIS = 120_000
 
+DEFAULT_TREND_KEYWORDS = [
+    "Artificial Intelligence",
+    "AI",
+    "Machine Learning",
+    "Blockchain",
+    "Internet of Things",
+    "IoT",
+    "Digital Twin",
+    "5G",
+    "Robotics",
+    "Autonomous Systems",
+    "Automation",
+    "Virtual Reality",
+    "Augmented Reality",
+    "Cloud Computing",
+    "Edge Computing",
+    "Fog Computing",
+    "Big Data Analytics"
+]
+
+STRIP_CHARS = ".,!?:()[]'\""
+
+
+def tokenize_keyword(keyword):
+    return [
+        part.strip(STRIP_CHARS)
+        for part in re.split(r'[-_/\s]+', keyword.lower())
+        if part.strip(STRIP_CHARS)
+    ]
+
+
+def compile_keyword_pattern(tokens):
+    if not tokens:
+        return None
+    separator = r'(?:\s+|[-_/]+)'
+    pattern = r'(?<!\w)' + separator.join(re.escape(token) for token in tokens) + r'(?!\w)'
+    return re.compile(pattern, re.IGNORECASE)
+
+
+def build_snippet(text, start, end, word_spans, window=5):
+    def index_at_or_after(position):
+        for idx, match in enumerate(word_spans):
+            if match.start() <= position < match.end():
+                return idx
+            if match.start() > position:
+                return idx
+        return len(word_spans)
+
+    start_idx = index_at_or_after(start)
+    end_idx = index_at_or_after(end)
+
+    left_start = max(0, start_idx - window)
+    left_words = [m.group(0) for m in word_spans[left_start:start_idx]]
+    right_words = [m.group(0) for m in word_spans[end_idx:end_idx + window]]
+
+    keyword_text = text[start:end].strip()
+    snippet_parts = []
+    if left_words:
+        snippet_parts.append(" ".join(left_words))
+    if keyword_text:
+        snippet_parts.append(keyword_text)
+    if right_words:
+        snippet_parts.append(" ".join(right_words))
+
+    snippet = " ".join(snippet_parts).strip()
+    snippet = re.sub(r'\s+', ' ', snippet)
+    return f"... {snippet} ..." if snippet else ""
+
 
 def allowed_file(filename):
     ext = os.path.splitext(filename)[1].lower()
@@ -198,10 +266,25 @@ def analyze():
         if not allowed_file(filename):
             return jsonify({'error': 'Unsupported file type'}), 400
 
-        buzzwords = request.form.get('buzzwords', '')
-        buzzwords = [w.strip().lower() for w in buzzwords.split(',') if w.strip()]
-        if not buzzwords:
-            return jsonify({'error': 'No buzzwords provided'}), 400
+        raw_keywords = request.form.get('buzzwords', '')
+        user_keywords = [w.strip() for w in raw_keywords.split(',') if w.strip()]
+
+        keyword_candidates = user_keywords + DEFAULT_TREND_KEYWORDS
+        keyword_specs = []
+        seen_keyword_tokens = set()
+        for candidate in keyword_candidates:
+            label = candidate.strip()
+            tokens = tokenize_keyword(label)
+            if not tokens:
+                continue
+            token_key = tuple(tokens)
+            if token_key in seen_keyword_tokens:
+                continue
+            seen_keyword_tokens.add(token_key)
+            keyword_specs.append({
+                'label': label,
+                'tokens': tokens
+            })
 
         if filename.endswith('.pdf'):
             try:
@@ -257,42 +340,51 @@ def analyze():
             for token in tokens:
                 add_token(token, idx)
 
-        freq = {w: len(token_index.get(w, [])) for w in buzzwords}
-        if all(v == 0 for v in freq.values()):
-            return jsonify({'error': 'No buzzwords found in text'}), 400
+        word_pattern = re.compile(r'\b\w[\w\-_/]*\b')
+        word_spans = list(word_pattern.finditer(text))
 
-        density = {w: round((freq[w] / total_words) * 100, 2) if total_words > 0 else 0 for w in buzzwords}
-
-        # KWIC
+        freq = {}
         kwic_results = {}
-        window = 5
-        for bw in buzzwords:
-            snippets = []
-            indices = token_index.get(bw, [])
-            seen = set()
-            for i in indices:
-                if i in seen:
-                    continue
-                seen.add(i)
-                left = " ".join(words[max(0, i - window):i])
-                right = " ".join(words[i + 1:i + 1 + window])
-                snippets.append(f"... {left} {words[i]} {right} ...")
-            kwic_results[bw] = snippets[:3]
-
-        # Collocations
         collocations = {}
-        for bw in buzzwords:
-            left_neighbors, right_neighbors = [], []
-            indices = token_index.get(bw, [])
-            for i in indices:
-                if i > 0:
-                    left_neighbors.append(words[i - 1])
-                if i < len(words) - 1:
-                    right_neighbors.append(words[i + 1])
-            collocations[bw] = {
-                "left": Counter(left_neighbors).most_common(3),
-                "right": Counter(right_neighbors).most_common(3)
-            }
+        window = 5
+
+        for spec in keyword_specs:
+            label = spec['label']
+            tokens = spec['tokens']
+            pattern = compile_keyword_pattern(tokens)
+            matches = list(pattern.finditer(text_lower)) if pattern else []
+
+            freq[label] = len(matches)
+
+            snippets = []
+            for match in matches:
+                snippet = build_snippet(text, match.start(), match.end(), word_spans, window=window)
+                if snippet:
+                    snippets.append(snippet)
+                if len(snippets) >= 3:
+                    break
+            kwic_results[label] = snippets
+
+            if len(tokens) == 1:
+                token = tokens[0]
+                indices = token_index.get(token, [])
+                left_neighbors, right_neighbors = [], []
+                for i in indices:
+                    if i > 0:
+                        left_neighbors.append(words[i - 1])
+                    if i < len(words) - 1:
+                        right_neighbors.append(words[i + 1])
+                collocations[label] = {
+                    "left": Counter(left_neighbors).most_common(3),
+                    "right": Counter(right_neighbors).most_common(3)
+                }
+            else:
+                collocations[label] = {"left": [], "right": []}
+
+        density = {
+            label: round((freq[label] / total_words) * 100, 2) if total_words > 0 else 0
+            for label in freq
+        }
 
         # Sentiment
         blob = TextBlob(text)

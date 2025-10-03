@@ -82,7 +82,7 @@ const KeywordInput = ({ value, onChange }) => {
   return (
     <div className="keyword-input-container">
       <div className="input-header">
-        <label htmlFor="keyword-input">Keywords</label>
+        <label htmlFor="keyword-input">Keywords (optional)</label>
         {keywords.length > 0 && (
           <button
             type="button"
@@ -121,7 +121,11 @@ const KeywordInput = ({ value, onChange }) => {
             onKeyDown={handleInputKeyDown}
             onFocus={() => inputValue && setShowSuggestions(filteredSuggestions.length > 0)}
             onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-            placeholder={keywords.length === 0 ? "Enter keywords (press Enter or comma to add)" : "Add more..."}
+            placeholder={
+              keywords.length === 0
+                ? "Optional: Enter keywords (press Enter or comma to add)"
+                : "Add more..."
+            }
             className="keyword-input-field"
             autoComplete="off"
           />
@@ -149,7 +153,7 @@ const KeywordInput = ({ value, onChange }) => {
           {keywords.length} keyword{keywords.length !== 1 ? 's' : ''} added
         </div>
         <div className="input-hint">
-          Press Enter or comma to add • Click tags to remove
+          Keywords are optional • Press Enter or comma to add • Click tags to remove
         </div>
       </div>
     </div>

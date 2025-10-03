@@ -115,11 +115,6 @@ function App() {
       setLoading(false);
       return;
     }
-    if (!keywords.trim()) {
-      setError("Please enter keywords.");
-      setLoading(false);
-      return;
-    }
     try {
       const formData = new FormData();
       formData.append("file", file);
