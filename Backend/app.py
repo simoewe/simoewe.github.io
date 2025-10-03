@@ -534,6 +534,31 @@ def search():
         return jsonify({'error': 'Search request failed'}), 500
 
 
+@app.route('/verify-visibility-code', methods=['POST'])
+def verify_visibility_code():
+    try:
+        data = request.get_json() or {}
+        provided = str(data.get('code', '')).strip()
+        if not provided:
+            return jsonify({'error': 'No code provided'}), 400
+
+        expected = os.environ.get('VISIBILITY_CODE')
+        if not expected:
+            logging.warning("Visibility code check attempted without VISIBILITY_CODE configured")
+            return jsonify({'error': 'Verification unavailable'}), 500
+
+        if provided == expected:
+            logging.info("Visibility code accepted")
+            return jsonify({'valid': True}), 200
+
+        logging.info("Visibility code rejected")
+        return jsonify({'valid': False}), 403
+
+    except Exception as e:
+        logging.error(f"Visibility code verification failed: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)

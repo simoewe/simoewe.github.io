@@ -842,6 +842,53 @@ textarea:focus {
   text-decoration: underline;
 }
 
+.modal-card.code-entry {
+  max-width: 420px;
+}
+
+.code-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.code-form label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.code-form input {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.code-form input:focus {
+  outline: none;
+  border-color: #e2001a;
+  box-shadow: 0 0 0 3px rgba(226, 0, 26, 0.15);
+}
+
+.code-error {
+  color: #b91c1c;
+  font-size: 13px;
+  margin: -4px 0 4px;
+}
+
+.code-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.code-actions button {
+  min-width: 110px;
+}
+
 .library-loading {
   display: flex;
   align-items: center;

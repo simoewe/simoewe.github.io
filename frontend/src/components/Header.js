@@ -1,10 +1,88 @@
 import React, { useState } from "react";
 import UHH_Logo from "../UHH_Logo.svg.png";
 import Library from "./Library";
+import { getApiBase } from "../utils/apiBase";
 
 export default function Header({ onPickFromLibrary }) {
   const [showLib, setShowLib] = useState(false);
   const [showImpressum, setShowImpressum] = useState(false);
+  const [showCodePrompt, setShowCodePrompt] = useState(false);
+  const [libraryAccessGranted, setLibraryAccessGranted] = useState(false);
+  const [codeInput, setCodeInput] = useState("");
+  const [codeError, setCodeError] = useState("");
+  const [verifyingCode, setVerifyingCode] = useState(false);
+
+  const handleLibraryClick = () => {
+    if (libraryAccessGranted) {
+      setShowLib((prev) => !prev);
+    } else {
+      setCodeInput("");
+      setCodeError("");
+      setShowCodePrompt(true);
+    }
+  };
+
+  const closeCodePrompt = () => {
+    if (verifyingCode) return;
+    setShowCodePrompt(false);
+    setCodeInput("");
+    setCodeError("");
+  };
+
+  const handleCodeSubmit = async (event) => {
+    event.preventDefault();
+    if (verifyingCode) return;
+
+    const trimmed = codeInput.trim();
+    if (!trimmed) {
+      setCodeError("Bitte Zugangscode eingeben.");
+      return;
+    }
+
+    try {
+      setVerifyingCode(true);
+      setCodeError("");
+      const base = getApiBase();
+      const resp = await fetch(
+        `${base ? `${base}/verify-visibility-code` : "/verify-visibility-code"}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ code: trimmed }),
+        }
+      );
+
+      const contentType = resp.headers.get("content-type") || "";
+      if (!contentType.includes("application/json")) {
+        const text = await resp.text();
+        throw new Error(text || `Unexpected response (${resp.status})`);
+      }
+
+      const data = await resp.json();
+
+      if (resp.ok && data.valid) {
+        setLibraryAccessGranted(true);
+        setShowCodePrompt(false);
+        setShowLib(true);
+        setCodeInput("");
+        setCodeError("");
+        return;
+      }
+
+      if (resp.status === 403 || data.valid === false) {
+        setCodeError("Code ist ungültig. Bitte erneut versuchen.");
+        return;
+      }
+
+      throw new Error(data.error || "Verifikation fehlgeschlagen.");
+    } catch (err) {
+      setCodeError(err.message || "Verifikation fehlgeschlagen.");
+    } finally {
+      setVerifyingCode(false);
+    }
+  };
 
   return (
     <header className="header">
@@ -18,7 +96,7 @@ export default function Header({ onPickFromLibrary }) {
           <li>Option</li>
           <li>Option</li>
           <li>
-            <button onClick={() => setShowLib(v => !v)}>Library</button>
+            <button onClick={handleLibraryClick}>Library</button>
           </li>
           <li>Kontakt</li>
           <li>
@@ -156,6 +234,54 @@ export default function Header({ onPickFromLibrary }) {
                 </p>
               </section>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showCodePrompt && (
+        <div
+          className="modal-backdrop"
+          role="presentation"
+          onClick={closeCodePrompt}
+        >
+          <div
+            className="modal-card code-entry"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="code-prompt-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-header">
+              <h2 id="code-prompt-title">Zugangscode erforderlich</h2>
+              <button
+                type="button"
+                className="modal-close"
+                onClick={closeCodePrompt}
+                aria-label="Codeeingabe schließen"
+              >
+                ×
+              </button>
+            </div>
+            <form className="code-form" onSubmit={handleCodeSubmit}>
+              <label htmlFor="visibility-code">Bitte Zugangscode eingeben</label>
+              <input
+                id="visibility-code"
+                type="password"
+                value={codeInput}
+                onChange={(e) => setCodeInput(e.target.value)}
+                autoFocus
+                disabled={verifyingCode}
+              />
+              {codeError && <p className="code-error">{codeError}</p>}
+              <div className="code-actions">
+                <button type="button" onClick={closeCodePrompt} disabled={verifyingCode}>
+                  Abbrechen
+                </button>
+                <button type="submit" disabled={verifyingCode}>
+                  {verifyingCode ? "Prüfe…" : "Bestätigen"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
