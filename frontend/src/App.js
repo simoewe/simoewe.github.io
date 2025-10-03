@@ -178,8 +178,10 @@ function App() {
                 </Panel>
                 <PanelResizeHandle className="custom-handle-vertical" />
                 <Panel defaultSize={80} minSize={70}>
-                  <div className="inner-container bottom" style={{ maxHeight: '400px', overflowY: 'auto', border: '1px solid #e0e0e0', borderRadius: '8px', background: '#fff' }}>
-                    <TextAnalyzer analysisResult={analysisResult} loading={loading} />
+                  <div className="inner-container bottom analysis-panel">
+                    <div className="analysis-panel-content">
+                      <TextAnalyzer analysisResult={analysisResult} loading={loading} />
+                    </div>
                   </div>
                 </Panel>
               </PanelGroup>

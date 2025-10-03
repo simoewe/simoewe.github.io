@@ -68,10 +68,10 @@ html {
 .navbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   padding: 16px 32px;
-  max-width: 1400px;
-  margin: 0 auto;
+  width: 100%;
+  gap: 24px;
 }
 
 /* Logo Styles */
@@ -103,6 +103,7 @@ html {
   gap: 24px;
   list-style: none;
   margin: 0;
+  margin-left: auto;
 }
 
 .nav-rechts li {
@@ -852,10 +853,15 @@ textarea:focus {
 .spinner {
   width: 28px;
   height: 28px;
+  min-width: 28px;
+  min-height: 28px;
+  display: inline-block;
   border: 3px solid rgba(226, 0, 26, 0.15);
   border-top-color: #e2001a;
   border-radius: 50%;
   animation: spin 1s linear infinite;
+  flex-shrink: 0;
+  aspect-ratio: 1/1;
 }
 
 @keyframes spin {
@@ -928,4 +934,20 @@ textarea:focus {
 .library-panel li button small {
   font-size: 12px;
   color: #6b7280;
+}
+
+.analysis-panel {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.analysis-panel-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
 }
