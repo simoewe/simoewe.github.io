@@ -95,6 +95,15 @@ function App() {
     setAnalysisSteps((prev) => prev.map((step) => ({ ...step, status: 'completed' })));
   }, [clearAnalysisTimers]);
 
+  const userKeywordList = useMemo(
+    () =>
+      keywords
+        .split(',')
+        .map((k) => k.trim())
+        .filter(Boolean),
+    [keywords]
+  );
+
   useEffect(() => {
     return () => {
       if (localPdfUrlRef.current) {
@@ -301,10 +310,3 @@ function App() {
 }
 
 export default App;
-  const userKeywordList = useMemo(() =>
-    keywords
-      .split(',')
-      .map((k) => k.trim())
-      .filter(Boolean),
-    [keywords]
-  );
