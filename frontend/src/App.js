@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Header from "./components/Header";
 import RightPanel from "./components/PdfViewer";
 import KeywordInput from "./components/Input";
@@ -20,6 +20,79 @@ function App() {
   const [error, setError] = useState("");
   const [pdfUrl, setPdfUrl] = useState(null);
   const localPdfUrlRef = useRef(null);
+  const progressIntervalRef = useRef(null);
+  const stepTimeoutsRef = useRef([]);
+
+  const DEFAULT_ANALYSIS_STEPS = useMemo(() => ([
+    { id: 'upload', label: 'Upload & Validierung' },
+    { id: 'extract', label: 'Textextraktion' },
+    { id: 'analyze', label: 'Trend-Analyse' },
+    { id: 'finalize', label: 'Ergebnisaufbereitung' }
+  ]), []);
+  const [analysisSteps, setAnalysisSteps] = useState(() =>
+    DEFAULT_ANALYSIS_STEPS.map((step) => ({ ...step, status: 'pending' }))
+  );
+  const [analysisProgress, setAnalysisProgress] = useState(0);
+
+  const clearAnalysisTimers = useCallback(() => {
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
+      progressIntervalRef.current = null;
+    }
+    if (stepTimeoutsRef.current.length) {
+      stepTimeoutsRef.current.forEach((timeoutId) => clearTimeout(timeoutId));
+      stepTimeoutsRef.current = [];
+    }
+  }, []);
+
+  const advanceStep = useCallback((completedId, nextId) => {
+    setAnalysisSteps((prev) =>
+      prev.map((step) => {
+        if (step.id === completedId) {
+          return { ...step, status: 'completed' };
+        }
+        if (nextId && step.id === nextId && step.status !== 'completed') {
+          return { ...step, status: 'active' };
+        }
+        return step;
+      })
+    );
+  }, []);
+
+  const startAnalysisIndicators = useCallback(() => {
+    clearAnalysisTimers();
+    setAnalysisProgress(5);
+    setAnalysisSteps(
+      DEFAULT_ANALYSIS_STEPS.map((step, index) => ({
+        ...step,
+        status: index === 0 ? 'active' : 'pending'
+      }))
+    );
+
+    progressIntervalRef.current = setInterval(() => {
+      setAnalysisProgress((prev) => {
+        if (prev >= 90) return prev;
+        const increment = Math.random() * 5 + 1;
+        return Math.min(prev + increment, 90);
+      });
+    }, 800);
+
+    const schedule = [
+      { delay: 1600, complete: 'upload', next: 'extract' },
+      { delay: 3800, complete: 'extract', next: 'analyze' },
+      { delay: 6200, complete: 'analyze', next: 'finalize' }
+    ];
+
+    stepTimeoutsRef.current = schedule.map(({ delay, complete, next }) =>
+      setTimeout(() => advanceStep(complete, next), delay)
+    );
+  }, [DEFAULT_ANALYSIS_STEPS, advanceStep, clearAnalysisTimers]);
+
+  const finishAnalysisIndicators = useCallback(() => {
+    clearAnalysisTimers();
+    setAnalysisProgress(100);
+    setAnalysisSteps((prev) => prev.map((step) => ({ ...step, status: 'completed' })));
+  }, [clearAnalysisTimers]);
 
   useEffect(() => {
     return () => {
@@ -27,8 +100,9 @@ function App() {
         URL.revokeObjectURL(localPdfUrlRef.current);
         localPdfUrlRef.current = null;
       }
+      clearAnalysisTimers();
     };
-  }, []);
+  }, [clearAnalysisTimers]);
 
   // File is set from right panel
   const handleFileUpload = (uploadedFile) => {
@@ -115,6 +189,7 @@ function App() {
       setLoading(false);
       return;
     }
+    startAnalysisIndicators();
     try {
       const formData = new FormData();
       formData.append("file", file);
@@ -137,6 +212,7 @@ function App() {
     } catch (err) {
       setError(err.message);
     } finally {
+      finishAnalysisIndicators();
       setLoading(false);
     }
   };
@@ -175,7 +251,12 @@ function App() {
                 <Panel defaultSize={80} minSize={70}>
                   <div className="inner-container bottom analysis-panel">
                     <div className="analysis-panel-content">
-                      <TextAnalyzer analysisResult={analysisResult} loading={loading} />
+                      <TextAnalyzer
+                        analysisResult={analysisResult}
+                        loading={loading}
+                        analysisProgress={analysisProgress}
+                        analysisSteps={analysisSteps}
+                      />
                     </div>
                   </div>
                 </Panel>

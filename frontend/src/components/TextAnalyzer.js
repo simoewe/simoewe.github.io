@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import '../TextAnalyzer.css';
 
-const TextAnalyzer = ({ analysisResult, loading }) => {
+const TextAnalyzer = ({ analysisResult, loading, analysisProgress = 0, analysisSteps = [] }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [expandedSections, setExpandedSections] = useState({
     kwic: false,
@@ -29,6 +29,7 @@ const TextAnalyzer = ({ analysisResult, loading }) => {
   };
 
   if (loading) {
+    const clampedProgress = Math.max(0, Math.min(analysisProgress, 100));
     return (
       <div className="text-analyzer">
         <div className="analyzer-header">
@@ -37,9 +38,22 @@ const TextAnalyzer = ({ analysisResult, loading }) => {
         <div className="loading-container">
           <div className="loading-spinner"></div>
           <p>Analyzing your document...</p>
+          {analysisSteps.length > 0 && (
+            <div className="loading-steps">
+              {analysisSteps.map((step) => (
+                <div key={step.id} className={`loading-step loading-step-${step.status}`}>
+                  <span className="loading-step-icon">
+                    {step.status === 'completed' ? '✅' : step.status === 'active' ? '🔄' : '•'}
+                  </span>
+                  <span className="loading-step-label">{step.label}</span>
+                </div>
+              ))}
+            </div>
+          )}
           <div className="progress-bar">
-            <div className="progress-fill"></div>
+            <div className="progress-fill" style={{ width: `${clampedProgress}%` }}></div>
           </div>
+          <div className="progress-percentage">{Math.round(clampedProgress)}%</div>
         </div>
       </div>
     );
