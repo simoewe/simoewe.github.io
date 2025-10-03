@@ -16,6 +16,7 @@ function App() {
   const [keywords, setKeywords] = useState("");
   const [file, setFile] = useState(null);
   const [analysisResult, setAnalysisResult] = useState(null);
+  const [submittedKeywords, setSubmittedKeywords] = useState([]);
   const [loading, setLoading] = useState(false);
   const [libraryLoading, setLibraryLoading] = useState(false);
   const [error, setError] = useState("");
@@ -194,6 +195,7 @@ function App() {
     setLoading(true);
     setError("");
     setAnalysisResult(null);
+    setSubmittedKeywords(userKeywordList);
     if (!file) {
       setError("Please select a file to analyze.");
       setLoading(false);
@@ -272,6 +274,7 @@ function App() {
                         loading={loading}
                         analysisProgress={analysisProgress}
                         analysisSteps={analysisSteps}
+                        customKeywords={submittedKeywords}
                       />
                     </div>
                   </div>

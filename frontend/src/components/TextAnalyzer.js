@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import '../TextAnalyzer.css';
 
-const TextAnalyzer = ({ analysisResult, loading, analysisProgress = 0, analysisSteps = [] }) => {
+const TextAnalyzer = ({ analysisResult, loading, analysisProgress = 0, analysisSteps = [], customKeywords = [] }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [expandedSections, setExpandedSections] = useState({
     kwic: false,
@@ -89,11 +89,46 @@ const TextAnalyzer = ({ analysisResult, loading, analysisProgress = 0, analysisS
 
   const { image, kwic, collocations, frequencies, densities, sentiment, readability, trends } = analysisResult;
 
+  const uniqueCustomKeywords = useMemo(() => {
+    const seen = new Set();
+    const unique = [];
+    customKeywords.forEach((keyword) => {
+      const trimmed = keyword.trim();
+      if (!trimmed) {
+        return;
+      }
+      const normalized = trimmed.toLowerCase();
+      if (seen.has(normalized)) {
+        return;
+      }
+      seen.add(normalized);
+      unique.push(trimmed);
+    });
+    return unique;
+  }, [customKeywords]);
+
+  const customKeywordSet = useMemo(() => {
+    return new Set(uniqueCustomKeywords.map((keyword) => keyword.toLowerCase()));
+  }, [uniqueCustomKeywords]);
+
   const frequencyEntries = frequencies ? Object.entries(frequencies) : [];
-  const keywordsFoundCount = frequencyEntries.filter(([, value]) => value > 0).length;
-  const totalOccurrences = frequencyEntries.reduce((sum, [, value]) => sum + value, 0);
-  const maxFrequencyValue = frequencyEntries.length > 0
-    ? Math.max(...frequencyEntries.map(([, value]) => value))
+  const technologyFrequencyEntries = frequencyEntries.filter(([keyword]) => !customKeywordSet.has(keyword.toLowerCase()));
+  const sortedTechnologyFrequencyEntries = technologyFrequencyEntries
+    .filter(([, value]) => value > 0)
+    .sort(([, a], [, b]) => b - a);
+  const keywordsFoundCount = technologyFrequencyEntries.filter(([, value]) => value > 0).length;
+  const totalOccurrences = technologyFrequencyEntries.reduce((sum, [, value]) => sum + value, 0);
+  const maxFrequencyValue = technologyFrequencyEntries.length > 0
+    ? Math.max(...technologyFrequencyEntries.map(([, value]) => value))
+    : 0;
+
+  const customFrequencyEntries = uniqueCustomKeywords.map((keyword) => {
+    const matchedEntry = frequencyEntries.find(([label]) => label.toLowerCase() === keyword.toLowerCase());
+    const frequencyValue = matchedEntry ? matchedEntry[1] : 0;
+    return [keyword, frequencyValue];
+  });
+  const customMaxFrequencyValue = customFrequencyEntries.length > 0
+    ? Math.max(...customFrequencyEntries.map(([, value]) => value))
     : 0;
 
   const tabs = [
@@ -155,11 +190,8 @@ const TextAnalyzer = ({ analysisResult, loading, analysisProgress = 0, analysisS
                 <div className="chart-card">
                   <h3>Technology Keyword Frequencies</h3>
                   <div className="frequency-bars">
-                    {frequencyEntries.filter(([, value]) => value > 0).length > 0 ? (
-                      frequencyEntries
-                        .filter(([, value]) => value > 0)
-                        .sort(([,a], [,b]) => b - a)
-                        .slice(0, 10)
+                    {sortedTechnologyFrequencyEntries.length > 0 ? (
+                      sortedTechnologyFrequencyEntries
                         .map(([keyword, freq]) => {
                           const baseline = maxFrequencyValue || 1;
                           const width = baseline > 0 ? (freq / baseline) * 100 : 0;
@@ -185,6 +217,38 @@ const TextAnalyzer = ({ analysisResult, loading, analysisProgress = 0, analysisS
                     )}
                   </div>
                 </div>
+            )}
+
+            {frequencies && densities && uniqueCustomKeywords.length > 0 && (
+              <div className="chart-card">
+                <h3>Custom Keyword Frequencies</h3>
+                <div className="frequency-bars">
+                  {customFrequencyEntries.length > 0 ? (
+                    customFrequencyEntries.map(([keyword, freq]) => {
+                      const baseline = customMaxFrequencyValue || 1;
+                      const width = baseline > 0 ? (freq / baseline) * 100 : 0;
+                      return (
+                        <div key={keyword} className="frequency-bar">
+                          <div className="bar-label">
+                            <span className="keyword">{keyword}</span>
+                            <span className="count">{freq}</span>
+                          </div>
+                          <div className="bar-container">
+                            <div 
+                              className="bar-fill" 
+                              style={{ width: `${width}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="no-keyword-results">
+                      No custom keywords provided for this analysis.
+                    </div>
+                  )}
+                </div>
+              </div>
             )}
           </div>
         )}
