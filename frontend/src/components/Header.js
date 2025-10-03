@@ -91,18 +91,19 @@ export default function Header({ onPickFromLibrary, technologyTerms }) {
         setShowLib(true);
         setCodeInput("");
         setCodeError("");
+        setVerifyingCode(false);
         return;
       }
 
       if (resp.status === 403 || data.valid === false) {
         setCodeError("Code ist ungültig. Bitte erneut versuchen.");
+        setVerifyingCode(false);
         return;
       }
 
       throw new Error(data.error || "Verifikation fehlgeschlagen.");
     } catch (err) {
       setCodeError(err.message || "Verifikation fehlgeschlagen.");
-    } finally {
       setVerifyingCode(false);
     }
   };
