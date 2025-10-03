@@ -65,19 +65,13 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(mess
 uploaded_documents = {}
 
 ALLOWED_EXTENSIONS = {'.pdf', '.docx', '.txt'}
-MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
+MAX_PDF_PAGES = 300
+MAX_WORDS_ANALYSIS = 120_000
 
 
 def allowed_file(filename):
     ext = os.path.splitext(filename)[1].lower()
     return ext in ALLOWED_EXTENSIONS
-
-
-def get_file_size(file):
-    file.seek(0, os.SEEK_END)
-    size = file.tell()
-    file.seek(0)
-    return size
 
 
 def extract_text_pdf(file_stream):
@@ -91,14 +85,11 @@ def extract_text_pdf(file_stream):
             size = 'unknown'
         logging.info(f"Starting PDF extraction. File size: {size} bytes")
 
-        # Read file into memory safely (limit to 5MB)
+        # Read file into memory
         file_stream.seek(0)
         file_bytes = file_stream.read()
         if isinstance(file_bytes, str):
             file_bytes = file_bytes.encode('utf-8')
-        if len(file_bytes) > 5 * 1024 * 1024:
-            logging.error("PDF file too large for safe processing (limit 5MB)")
-            raise ValueError("PDF file too large for safe processing (limit 5MB)")
 
         # Use BytesIO for PyPDF2
         from io import BytesIO
@@ -117,6 +108,11 @@ def extract_text_pdf(file_stream):
             except Exception as decrypt_error:
                 logging.error(f"Failed to decrypt PDF: {decrypt_error}")
                 raise ValueError("Failed to decrypt encrypted PDF")
+
+        page_count = len(reader.pages)
+        if page_count > MAX_PDF_PAGES:
+            logging.info(f"PDF rejected due to page limit: {page_count} pages")
+            raise ValueError(f"PDF überschreitet das Seitenlimit von {MAX_PDF_PAGES} Seiten.")
         text = ''
         for page_num, page in enumerate(reader.pages):
             try:
@@ -202,10 +198,6 @@ def analyze():
         if not allowed_file(filename):
             return jsonify({'error': 'Unsupported file type'}), 400
 
-        if get_file_size(file) > MAX_FILE_SIZE:
-            return jsonify({'error': 'File too large (max 5MB)'}), 400
-        file.seek(0)
-
         buzzwords = request.form.get('buzzwords', '')
         buzzwords = [w.strip().lower() for w in buzzwords.split(',') if w.strip()]
         if not buzzwords:
@@ -214,18 +206,27 @@ def analyze():
         if filename.endswith('.pdf'):
             try:
                 text = extract_text_pdf(file)
+            except ValueError as pdf_error:
+                logging.warning(f"PDF validation error: {pdf_error}")
+                return jsonify({'error': str(pdf_error)}), 400
             except Exception as pdf_error:
                 logging.error(f"PDF extraction error: {pdf_error}")
                 return jsonify({'error': 'Failed to extract text from PDF. The file may be corrupted or too complex.'}), 400
         elif filename.endswith('.docx'):
             try:
                 text = extract_text_docx(file)
+            except ValueError as docx_error:
+                logging.warning(f"DOCX validation error: {docx_error}")
+                return jsonify({'error': str(docx_error)}), 400
             except Exception as docx_error:
                 logging.error(f"DOCX extraction error: {docx_error}")
                 return jsonify({'error': 'Failed to extract text from DOCX.'}), 400
         elif filename.endswith('.txt'):
             try:
                 text = extract_text_txt(file)
+            except ValueError as txt_error:
+                logging.warning(f"TXT validation error: {txt_error}")
+                return jsonify({'error': str(txt_error)}), 400
             except Exception as txt_error:
                 logging.error(f"TXT extraction error: {txt_error}")
                 return jsonify({'error': 'Failed to extract text from TXT.'}), 400
@@ -235,6 +236,10 @@ def analyze():
         text_lower = text.lower()
         words = [w.strip(".,!?;:()[]") for w in text_lower.split() if w.strip(".,!?;:()[]")]
         total_words = len(words)
+
+        if total_words > MAX_WORDS_ANALYSIS:
+            logging.info(f"Document rejected due to length: {total_words} words")
+            return jsonify({'error': f'Dokument zu umfangreich (Limit {MAX_WORDS_ANALYSIS:,} Wörter). Bitte kürzere Datei wählen.'}), 400
 
         token_index = {}
 

@@ -966,44 +966,74 @@ textarea:focus {
   color: #1f2937;
 }
 
-.library-panel h3 {
-  margin-bottom: 12px;
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.library-panel ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.library-tree {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
 }
 
-.library-panel li button {
+.library-tree-node {
+  display: flex;
+  flex-direction: column;
+}
+
+.library-tree-folder,
+.library-tree-file {
   width: 100%;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   background: #f3f4f6;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
-  padding: 10px 12px;
+  padding: 9px 12px;
   cursor: pointer;
   font-size: 14px;
   color: #1f2937;
   transition: background 0.2s ease, transform 0.2s ease;
 }
 
-.library-panel li button:hover {
+.library-tree-folder {
+  font-weight: 600;
+  justify-content: flex-start;
+}
+
+.library-tree-file {
+  justify-content: flex-start;
+}
+
+.library-tree-folder:hover,
+.library-tree-file:hover {
   background: #e5e7eb;
   transform: translateY(-1px);
 }
 
-.library-panel li button small {
+.library-tree-icon {
+  width: 18px;
+}
+
+.library-tree-count,
+.library-tree-meta {
+  margin-left: auto;
   font-size: 12px;
+  color: #6b7280;
+}
+
+.library-tree-label {
+  flex: 1;
+  text-align: left;
+}
+
+.library-tree-children {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.library-empty {
+  margin: 0;
+  font-size: 14px;
   color: #6b7280;
 }
 
