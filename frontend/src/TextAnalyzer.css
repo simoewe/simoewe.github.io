@@ -903,10 +903,3 @@
     background: rgba(30, 41, 59, 0.65);
   }
 }
-
-  .table-header,
-  .table-row {
-    padding: 6px 8px;
-    font-size: 12px;
-  }
-}
