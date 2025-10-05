@@ -8,13 +8,22 @@ import boto3
 from botocore.config import Config
 from urllib.parse import quote
 
-from .analysis_service import analyze_document
-from .document_processing import (
-    allowed_file,
-    extract_text_docx,
-    extract_text_pdf,
-    extract_text_txt,
-)
+try:  # Prefer package-relative imports when available
+    from .analysis_service import analyze_document
+    from .document_processing import (
+        allowed_file,
+        extract_text_docx,
+        extract_text_pdf,
+        extract_text_txt,
+    )
+except ImportError:  # Fallback for environments running from the backend folder root
+    from analysis_service import analyze_document
+    from document_processing import (
+        allowed_file,
+        extract_text_docx,
+        extract_text_pdf,
+        extract_text_txt,
+    )
 
 # S3-kompatible OCI-API - Für Oracle Anbindung
 def get_s3_client():
