@@ -68,6 +68,8 @@ ALLOWED_EXTENSIONS = {'.pdf', '.docx', '.txt'}
 MAX_PDF_PAGES = 300
 MAX_WORDS_ANALYSIS = 120_000
 PDF_OPTIMIZE_THRESHOLD_BYTES = 8 * 1024 * 1024  # 8 MB
+PDF_PREFER_PDFMINER_BYTES = 5 * 1024 * 1024  # Prefer pdfminer for large files
+PDF_PREFER_PDFMINER_PAGES = 120
 
 DEFAULT_TREND_KEYWORDS = [
     "Artificial Intelligence",
@@ -262,6 +264,24 @@ def extract_text_pdf(file_stream):
         if page_count > MAX_PDF_PAGES:
             logging.info(f"PDF rejected due to page limit: {page_count} pages")
             raise ValueError(f"PDF überschreitet das Seitenlimit von {MAX_PDF_PAGES} Seiten.")
+        prefer_pdfminer = (
+            pdfminer_extract_text is not None and (
+                len(file_bytes) >= PDF_PREFER_PDFMINER_BYTES or
+                page_count >= PDF_PREFER_PDFMINER_PAGES
+            )
+        )
+        pdfminer_attempted = False
+        if prefer_pdfminer:
+            try:
+                miner_text = pdfminer_extract_text(io.BytesIO(file_bytes), password="")
+                pdfminer_attempted = True
+                if miner_text and miner_text.strip():
+                    logging.info("pdfminer extraction preferred for large/complex PDF")
+                    return miner_text
+                logging.warning("pdfminer preferred path yielded empty text; falling back to PyPDF2")
+            except Exception as miner_pref_error:
+                logging.warning(f"pdfminer preferred path failed: {miner_pref_error}; falling back to PyPDF2")
+
         text = ''
         for page_num, page in enumerate(reader.pages):
             try:
@@ -275,21 +295,21 @@ def extract_text_pdf(file_stream):
 
         logging.info("PyPDF2 returned little/no text; attempting pdfminer fallback")
 
+        if pdfminer_extract_text and not pdfminer_attempted:
+            try:
+                miner_text = pdfminer_extract_text(io.BytesIO(file_bytes), password="")
+                if miner_text and miner_text.strip():
+                    logging.info("pdfminer extraction successful")
+                    return miner_text
+                logging.warning("pdfminer extraction yielded empty text")
+                return miner_text or text
+            except Exception as miner_error:
+                logging.error(f"pdfminer extraction failed: {miner_error}")
+                return text
+
         if not pdfminer_extract_text:
             logging.warning("pdfminer.six not installed; cannot improve extraction result")
-            return text
-
-        pdf_io.seek(0)
-        try:
-            miner_text = pdfminer_extract_text(pdf_io, password="")
-            if miner_text and miner_text.strip():
-                logging.info("pdfminer extraction successful")
-                return miner_text
-            logging.warning("pdfminer extraction yielded empty text")
-            return miner_text or text
-        except Exception as miner_error:
-            logging.error(f"pdfminer extraction failed: {miner_error}")
-            return text
+        return text
     except Exception as e:
         logging.error(f"PDF extraction failed: {e}")
         raise

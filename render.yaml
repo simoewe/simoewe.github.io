@@ -9,10 +9,12 @@ services:
       pip install --upgrade pip
       pip install -r requirements.txt
       python -m spacy download en_core_web_sm
-    startCommand: gunicorn --timeout 120 app:app
+    startCommand: gunicorn app:app
     envVars:
       - key: FRONTEND_URL
         value: https://simoewe-github-io-1-cdi0.onrender.com
+      - key: GUNICORN_CMD_ARGS
+        value: "--timeout 180 --graceful-timeout 210 --max-requests 20"
 
   # --- Frontend Service (React) ---
   - type: static_site
