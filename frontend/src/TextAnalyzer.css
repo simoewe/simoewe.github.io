@@ -990,6 +990,10 @@
     box-shadow: 0 16px 32px rgba(8, 11, 19, 0.5);
   }
 
+  .metric-card h3 {
+    color: #f8fafc;
+  }
+
   .bar-container {
     background: rgba(148, 163, 184, 0.2);
   }
@@ -1076,6 +1080,34 @@
 
   .metrics-grid .metric-card {
     background: rgba(30, 41, 59, 0.85);
+  }
+
+  .sentiment-row > span:first-child {
+    color: #cbd5f5;
+  }
+
+  .sentiment-bar {
+    background: rgba(148, 163, 184, 0.25);
+  }
+
+  .sentiment-value {
+    color: #f8fafc;
+  }
+
+  .metric-label {
+    color: #cbd5f5;
+  }
+
+  .metric-value {
+    color: #f8fafc;
+  }
+
+  .metric-item {
+    border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  }
+
+  .metric-item:last-child {
+    border-bottom: none;
   }
 
   .table-header {
