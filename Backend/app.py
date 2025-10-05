@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import os
 import io
-from PyPDF2 import PdfReader
+from PyPDF2 import PdfReader, PdfWriter
 try:
     from pdfminer.high_level import extract_text as pdfminer_extract_text
 except ImportError:  # pdfminer is optional but preferred for complex PDFs
@@ -67,6 +67,7 @@ uploaded_documents = {}
 ALLOWED_EXTENSIONS = {'.pdf', '.docx', '.txt'}
 MAX_PDF_PAGES = 300
 MAX_WORDS_ANALYSIS = 120_000
+PDF_OPTIMIZE_THRESHOLD_BYTES = 8 * 1024 * 1024  # 8 MB
 
 DEFAULT_TREND_KEYWORDS = [
     "Artificial Intelligence",
@@ -142,6 +143,89 @@ def allowed_file(filename):
     return ext in ALLOWED_EXTENSIONS
 
 
+def optimize_pdf_bytes(file_bytes):
+    """Attempt to shrink heavy PDFs by stripping embedded images."""
+    if not isinstance(file_bytes, (bytes, bytearray)):
+        return file_bytes
+
+    original_size = len(file_bytes)
+    if original_size < PDF_OPTIMIZE_THRESHOLD_BYTES:
+        return file_bytes
+
+    try:
+        pdf_io = io.BytesIO(file_bytes)
+        reader = PdfReader(pdf_io, strict=False)
+        writer = PdfWriter()
+
+        images_removed = 0
+        for page in reader.pages:
+            try:
+                resources = page.get("/Resources")
+                if resources is None:
+                    writer.add_page(page)
+                    continue
+
+                try:
+                    resources = resources.get_object()
+                except AttributeError:
+                    pass
+
+                xobjects = resources.get("/XObject") if isinstance(resources, dict) else None
+                if xobjects is not None:
+                    try:
+                        xobjects = xobjects.get_object()
+                    except AttributeError:
+                        pass
+
+                    if isinstance(xobjects, dict):
+                        keys_to_remove = []
+                        for name, candidate in list(xobjects.items()):
+                            try:
+                                candidate_obj = candidate.get_object()
+                            except AttributeError:
+                                candidate_obj = candidate
+
+                            subtype = candidate_obj.get("/Subtype") if isinstance(candidate_obj, dict) else None
+                            if subtype == "/Image":
+                                keys_to_remove.append(name)
+
+                        for key in keys_to_remove:
+                            xobjects.pop(key, None)
+                            images_removed += 1
+
+                try:
+                    page.compress_content_streams()
+                except Exception:
+                    pass
+
+                writer.add_page(page)
+            except Exception:
+                writer.add_page(page)
+
+        optimized_io = io.BytesIO()
+        writer.write(optimized_io)
+        optimized_bytes = optimized_io.getvalue()
+        try:
+            writer.close()
+        except Exception:
+            pass
+
+        if images_removed:
+            logging.info(
+                "Optimized PDF by removing %s images. Size reduced from %s to %s bytes",
+                images_removed,
+                original_size,
+                len(optimized_bytes)
+            )
+
+        if optimized_bytes and len(optimized_bytes) < original_size:
+            return optimized_bytes
+    except Exception as optimize_error:
+        logging.warning(f"PDF optimization failed: {optimize_error}")
+
+    return file_bytes
+
+
 def extract_text_pdf(file_stream):
     try:
         # Log file details for debugging
@@ -159,10 +243,12 @@ def extract_text_pdf(file_stream):
         if isinstance(file_bytes, str):
             file_bytes = file_bytes.encode('utf-8')
 
+        file_bytes = optimize_pdf_bytes(file_bytes)
+
         # Use BytesIO for PyPDF2
         from io import BytesIO
         pdf_io = BytesIO(file_bytes)
-        reader = PdfReader(pdf_io)
+        reader = PdfReader(pdf_io, strict=False)
 
         if reader.is_encrypted:
             try:

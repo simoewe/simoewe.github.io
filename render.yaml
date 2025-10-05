@@ -9,7 +9,7 @@ services:
       pip install --upgrade pip
       pip install -r requirements.txt
       python -m spacy download en_core_web_sm
-    startCommand: gunicorn app:app
+    startCommand: gunicorn --timeout 120 app:app
     envVars:
       - key: FRONTEND_URL
         value: https://simoewe-github-io-1-cdi0.onrender.com
