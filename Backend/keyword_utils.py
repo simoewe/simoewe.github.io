@@ -2,7 +2,10 @@
 
 import re
 
-from .constants import STRIP_CHARS
+try:
+    from .constants import STRIP_CHARS
+except ImportError:
+    from constants import STRIP_CHARS
 
 
 def tokenize_keyword(keyword):

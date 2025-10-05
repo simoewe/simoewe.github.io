@@ -4,7 +4,10 @@ from collections import Counter
 import re
 import unicodedata
 
-from .constants import TREND_STATUS_ORDER, TREND_STATUS_PATTERNS, TREND_TERMS
+try:
+    from .constants import TREND_STATUS_ORDER, TREND_STATUS_PATTERNS, TREND_TERMS
+except ImportError:
+    from constants import TREND_STATUS_ORDER, TREND_STATUS_PATTERNS, TREND_TERMS
 
 
 def normalize_to_ascii(text):

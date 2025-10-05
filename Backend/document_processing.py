@@ -18,13 +18,22 @@ except ImportError:
 
 from docx import Document
 
-from .constants import (
-    ALLOWED_EXTENSIONS,
-    MAX_PDF_PAGES,
-    PDF_OPTIMIZE_THRESHOLD_BYTES,
-    PDF_PDFMINER_MAX_BYTES,
-    PDF_PDFMINER_MAX_PAGES,
-)
+try:
+    from .constants import (
+        ALLOWED_EXTENSIONS,
+        MAX_PDF_PAGES,
+        PDF_OPTIMIZE_THRESHOLD_BYTES,
+        PDF_PDFMINER_MAX_BYTES,
+        PDF_PDFMINER_MAX_PAGES,
+    )
+except ImportError:
+    from constants import (
+        ALLOWED_EXTENSIONS,
+        MAX_PDF_PAGES,
+        PDF_OPTIMIZE_THRESHOLD_BYTES,
+        PDF_PDFMINER_MAX_BYTES,
+        PDF_PDFMINER_MAX_PAGES,
+    )
 
 
 def allowed_file(filename):

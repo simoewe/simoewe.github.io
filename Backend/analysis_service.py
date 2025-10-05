@@ -10,12 +10,20 @@ from textblob import TextBlob
 from wordcloud import WordCloud
 import re
 
-from .constants import (
-    DEFAULT_TREND_KEYWORDS,
-    MAX_WORDS_ANALYSIS,
-)
-from .keyword_utils import build_snippet, compile_keyword_pattern, tokenize_keyword
-from .trend_analysis import analyze_trends
+try:
+    from .constants import (
+        DEFAULT_TREND_KEYWORDS,
+        MAX_WORDS_ANALYSIS,
+    )
+    from .keyword_utils import build_snippet, compile_keyword_pattern, tokenize_keyword
+    from .trend_analysis import analyze_trends
+except ImportError:  # Fallback when modules are imported without package context
+    from constants import (
+        DEFAULT_TREND_KEYWORDS,
+        MAX_WORDS_ANALYSIS,
+    )
+    from keyword_utils import build_snippet, compile_keyword_pattern, tokenize_keyword
+    from trend_analysis import analyze_trends
 
 
 def build_keyword_specs(user_keywords):
