@@ -1,27 +1,20 @@
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify
 from flask_cors import CORS
-import os
-import io
-from PyPDF2 import PdfReader, PdfWriter
-try:
-    from pdfminer.high_level import extract_text as pdfminer_extract_text
-except ImportError:  # pdfminer is optional but preferred for complex PDFs
-    pdfminer_extract_text = None
-try:
-    import fitz  # PyMuPDF
-except ImportError:
-    fitz = None
-from docx import Document
-from wordcloud import WordCloud
-import matplotlib.pyplot as plt
-import base64
 import logging
-from textblob import TextBlob
-from collections import Counter
+import os
 import re
+
 import boto3
 from botocore.config import Config
 from urllib.parse import quote
+
+from .analysis_service import analyze_document
+from .document_processing import (
+    allowed_file,
+    extract_text_docx,
+    extract_text_pdf,
+    extract_text_txt,
+)
 
 # S3-kompatible OCI-API - Für Oracle Anbindung
 def get_s3_client():
@@ -68,314 +61,6 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(mess
 # In-memory storage for uploaded documents (use database in production)
 uploaded_documents = {}
 
-ALLOWED_EXTENSIONS = {'.pdf', '.docx', '.txt'}
-MAX_PDF_PAGES = 300
-MAX_WORDS_ANALYSIS = 120_000
-PDF_OPTIMIZE_THRESHOLD_BYTES = 8 * 1024 * 1024  # 8 MB
-PDF_PDFMINER_MAX_BYTES = 4 * 1024 * 1024  # Don't send very large PDFs to pdfminer
-PDF_PDFMINER_MAX_PAGES = 80
-
-DEFAULT_TREND_KEYWORDS = [
-    "Artificial Intelligence",
-    "AI",
-    "Machine Learning",
-    "Blockchain",
-    "Internet of Things",
-    "IoT",
-    "Digital Twin",
-    "5G",
-    "Robotics",
-    "Autonomous Systems",
-    "Automation",
-    "Virtual Reality",
-    "Augmented Reality",
-    "Cloud Computing",
-    "Edge Computing",
-    "Fog Computing",
-    "Big Data Analytics"
-]
-
-STRIP_CHARS = ".,!?:()[]'\""
-
-
-def tokenize_keyword(keyword):
-    return [
-        part.strip(STRIP_CHARS)
-        for part in re.split(r'[-_/\s]+', keyword.lower())
-        if part.strip(STRIP_CHARS)
-    ]
-
-
-def compile_keyword_pattern(tokens):
-    if not tokens:
-        return None
-    separator = r'(?:\s+|[-_/]+)'
-    pattern = r'(?<!\w)' + separator.join(re.escape(token) for token in tokens) + r'(?!\w)'
-    return re.compile(pattern, re.IGNORECASE)
-
-
-def build_snippet(text, start, end, word_spans, window=5):
-    def index_at_or_after(position):
-        for idx, match in enumerate(word_spans):
-            if match.start() <= position < match.end():
-                return idx
-            if match.start() > position:
-                return idx
-        return len(word_spans)
-
-    start_idx = index_at_or_after(start)
-    end_idx = index_at_or_after(end)
-
-    left_start = max(0, start_idx - window)
-    left_words = [m.group(0) for m in word_spans[left_start:start_idx]]
-    right_words = [m.group(0) for m in word_spans[end_idx:end_idx + window]]
-
-    keyword_text = text[start:end].strip()
-    snippet_parts = []
-    if left_words:
-        snippet_parts.append(" ".join(left_words))
-    if keyword_text:
-        snippet_parts.append(keyword_text)
-    if right_words:
-        snippet_parts.append(" ".join(right_words))
-
-    snippet = " ".join(snippet_parts).strip()
-    snippet = re.sub(r'\s+', ' ', snippet)
-    return f"... {snippet} ..." if snippet else ""
-
-
-def allowed_file(filename):
-    ext = os.path.splitext(filename)[1].lower()
-    return ext in ALLOWED_EXTENSIONS
-
-
-def optimize_pdf_bytes(file_bytes):
-    """Attempt to shrink heavy PDFs by stripping embedded images."""
-    if not isinstance(file_bytes, (bytes, bytearray)):
-        return file_bytes
-
-    original_size = len(file_bytes)
-    if original_size < PDF_OPTIMIZE_THRESHOLD_BYTES:
-        return file_bytes
-
-    try:
-        pdf_io = io.BytesIO(file_bytes)
-        reader = PdfReader(pdf_io, strict=False)
-        writer = PdfWriter()
-
-        images_removed = 0
-        for page in reader.pages:
-            try:
-                resources = page.get("/Resources")
-                if resources is None:
-                    writer.add_page(page)
-                    continue
-
-                try:
-                    resources = resources.get_object()
-                except AttributeError:
-                    pass
-
-                xobjects = resources.get("/XObject") if isinstance(resources, dict) else None
-                if xobjects is not None:
-                    try:
-                        xobjects = xobjects.get_object()
-                    except AttributeError:
-                        pass
-
-                    if isinstance(xobjects, dict):
-                        keys_to_remove = []
-                        for name, candidate in list(xobjects.items()):
-                            try:
-                                candidate_obj = candidate.get_object()
-                            except AttributeError:
-                                candidate_obj = candidate
-
-                            subtype = candidate_obj.get("/Subtype") if isinstance(candidate_obj, dict) else None
-                            if subtype == "/Image":
-                                keys_to_remove.append(name)
-
-                        for key in keys_to_remove:
-                            xobjects.pop(key, None)
-                            images_removed += 1
-
-                writer.add_page(page)
-            except Exception:
-                writer.add_page(page)
-
-        optimized_io = io.BytesIO()
-        writer.write(optimized_io)
-        optimized_bytes = optimized_io.getvalue()
-        try:
-            writer.close()
-        except Exception:
-            pass
-
-        if images_removed:
-            logging.info(
-                "Optimized PDF by removing %s images. Size reduced from %s to %s bytes",
-                images_removed,
-                original_size,
-                len(optimized_bytes)
-            )
-
-        if optimized_bytes and len(optimized_bytes) < original_size:
-            return optimized_bytes
-    except Exception as optimize_error:
-        logging.warning(f"PDF optimization failed: {optimize_error}")
-
-    return file_bytes
-
-
-def extract_text_pymupdf(file_bytes, reason_label="preferred"):
-    """Extract text using PyMuPDF for complex PDFs."""
-    if not fitz or not isinstance(file_bytes, (bytes, bytearray)):
-        return None, None
-
-    doc = None
-    try:
-        doc = fitz.open(stream=file_bytes, filetype="pdf")
-        page_count = doc.page_count
-        text_buffer = io.StringIO()
-        for page_index, page in enumerate(doc):
-            page_text = page.get_text("text") or ""
-            if page_text:
-                text_buffer.write(page_text)
-                if not page_text.endswith("\n"):
-                    text_buffer.write("\n")
-        extracted = text_buffer.getvalue().strip()
-        if extracted:
-            logging.info(
-                "PyMuPDF extraction (%s) succeeded on %s pages",
-                reason_label,
-                page_count
-            )
-            return extracted, page_count
-        logging.warning("PyMuPDF extraction (%s) returned empty text", reason_label)
-        return None, page_count
-    except Exception as pymupdf_error:
-        logging.warning(f"PyMuPDF extraction ({reason_label}) failed: {pymupdf_error}")
-        return None, getattr(doc, "page_count", None)
-    finally:
-        if doc is not None:
-            doc.close()
-
-
-def extract_text_pdf(file_stream):
-    try:
-        # Log file details for debugging
-        try:
-            file_stream.seek(0, os.SEEK_END)
-            size = file_stream.tell()
-            file_stream.seek(0)
-        except Exception:
-            size = 'unknown'
-        logging.info(f"Starting PDF extraction. File size: {size} bytes")
-
-        # Read file into memory
-        file_stream.seek(0)
-        file_bytes = file_stream.read()
-        if isinstance(file_bytes, str):
-            file_bytes = file_bytes.encode('utf-8')
-
-        original_file_bytes = file_bytes
-
-        pymupdf_text = None
-        pymupdf_pages = None
-        if fitz:
-            pymupdf_text, pymupdf_pages = extract_text_pymupdf(original_file_bytes, reason_label="initial")
-            if pymupdf_pages and pymupdf_pages > MAX_PDF_PAGES:
-                logging.info(f"PDF rejected due to page limit (PyMuPDF count): {pymupdf_pages} pages")
-                raise ValueError(f"PDF überschreitet das Seitenlimit von {MAX_PDF_PAGES} Seiten.")
-            if pymupdf_text:
-                return pymupdf_text
-
-        file_bytes = optimize_pdf_bytes(file_bytes)
-
-        # Use BytesIO for PyPDF2
-        from io import BytesIO
-        pdf_io = BytesIO(file_bytes)
-        reader = PdfReader(pdf_io, strict=False)
-
-        if reader.is_encrypted:
-            try:
-                decrypt_result = reader.decrypt("")
-                if decrypt_result == 0:
-                    decrypt_result = reader.decrypt(None)
-                if decrypt_result == 0:
-                    logging.error("Encrypted PDF requires a password")
-                    raise ValueError("PDF is encrypted and requires a password")
-                logging.info("Encrypted PDF decrypted with an empty password")
-            except Exception as decrypt_error:
-                logging.error(f"Failed to decrypt PDF: {decrypt_error}")
-                raise ValueError("Failed to decrypt encrypted PDF")
-
-        page_count = len(reader.pages)
-        if page_count > MAX_PDF_PAGES:
-            logging.info(f"PDF rejected due to page limit: {page_count} pages")
-            raise ValueError(f"PDF überschreitet das Seitenlimit von {MAX_PDF_PAGES} Seiten.")
-
-        text = ''
-        for page_num, page in enumerate(reader.pages):
-            try:
-                page_text = page.extract_text()
-                text += page_text or ''
-            except Exception as page_error:
-                logging.error(f"PDF page {page_num+1} extraction failed: {page_error}")
-                continue
-        if text and text.strip():
-            return text
-
-        logging.info("PyPDF2 returned little/no text; attempting pdfminer fallback")
-
-        allow_pdfminer = (
-            pdfminer_extract_text is not None
-            and len(file_bytes) <= PDF_PDFMINER_MAX_BYTES
-            and page_count <= PDF_PDFMINER_MAX_PAGES
-        )
-
-        if allow_pdfminer:
-            try:
-                miner_text = pdfminer_extract_text(io.BytesIO(file_bytes), password="")
-                if miner_text and miner_text.strip():
-                    logging.info("pdfminer extraction successful")
-                    return miner_text
-                logging.warning("pdfminer extraction yielded empty text")
-                return miner_text or text
-            except Exception as miner_error:
-                logging.error(f"pdfminer extraction failed: {miner_error}")
-                return text
-
-        if not pdfminer_extract_text:
-            logging.warning("pdfminer.six not installed; cannot improve extraction result")
-        elif not allow_pdfminer:
-            logging.info(
-                "Skipped pdfminer fallback due to size/page constraints (size=%s bytes, pages=%s)",
-                len(file_bytes),
-                page_count
-            )
-        return text
-    except Exception as e:
-        logging.error(f"PDF extraction failed: {e}")
-        raise
-
-
-def extract_text_docx(file_stream):
-    try:
-        doc = Document(file_stream)
-        return '\n'.join([p.text for p in doc.paragraphs if p.text.strip()])
-    except Exception as e:
-        logging.error(f"DOCX extraction failed: {e}")
-        raise
-
-
-def extract_text_txt(file_stream):
-    try:
-        return file_stream.read().decode('utf-8', errors='ignore')
-    except Exception as e:
-        logging.error(f"TXT extraction failed: {e}")
-        raise
-
 
 @app.route('/health')
 def health_check():
@@ -415,177 +100,27 @@ def analyze():
         raw_keywords = request.form.get('buzzwords', '')
         user_keywords = [w.strip() for w in raw_keywords.split(',') if w.strip()]
 
-        keyword_candidates = user_keywords + DEFAULT_TREND_KEYWORDS
-        keyword_specs = []
-        seen_keyword_tokens = set()
-        for candidate in keyword_candidates:
-            label = candidate.strip()
-            tokens = tokenize_keyword(label)
-            if not tokens:
-                continue
-            token_key = tuple(tokens)
-            if token_key in seen_keyword_tokens:
-                continue
-            seen_keyword_tokens.add(token_key)
-            keyword_specs.append({
-                'label': label,
-                'tokens': tokens
-            })
-
-        if filename.endswith('.pdf'):
-            try:
+        try:
+            if filename.endswith('.pdf'):
                 text = extract_text_pdf(file)
-            except ValueError as pdf_error:
-                logging.warning(f"PDF validation error: {pdf_error}")
-                return jsonify({'error': str(pdf_error)}), 400
-            except Exception as pdf_error:
-                logging.error(f"PDF extraction error: {pdf_error}")
-                return jsonify({'error': 'Failed to extract text from PDF. The file may be corrupted or too complex.'}), 400
-        elif filename.endswith('.docx'):
-            try:
+            elif filename.endswith('.docx'):
                 text = extract_text_docx(file)
-            except ValueError as docx_error:
-                logging.warning(f"DOCX validation error: {docx_error}")
-                return jsonify({'error': str(docx_error)}), 400
-            except Exception as docx_error:
-                logging.error(f"DOCX extraction error: {docx_error}")
-                return jsonify({'error': 'Failed to extract text from DOCX.'}), 400
-        elif filename.endswith('.txt'):
-            try:
+            elif filename.endswith('.txt'):
                 text = extract_text_txt(file)
-            except ValueError as txt_error:
-                logging.warning(f"TXT validation error: {txt_error}")
-                return jsonify({'error': str(txt_error)}), 400
-            except Exception as txt_error:
-                logging.error(f"TXT extraction error: {txt_error}")
-                return jsonify({'error': 'Failed to extract text from TXT.'}), 400
-        else:
-            return jsonify({'error': 'Unsupported file type'}), 400
-
-        text_lower = text.lower()
-        words = [w.strip(".,!?;:()[]") for w in text_lower.split() if w.strip(".,!?;:()[]")]
-        total_words = len(words)
-
-        if total_words > MAX_WORDS_ANALYSIS:
-            logging.info(f"Document rejected due to length: {total_words} words")
-            return jsonify({'error': f'Dokument zu umfangreich (Limit {MAX_WORDS_ANALYSIS:,} Wörter). Bitte kürzere Datei wählen.'}), 400
-
-        token_index = {}
-
-        def add_token(token, index):
-            if not token:
-                return
-            token_index.setdefault(token, []).append(index)
-
-        for idx, word in enumerate(words):
-            tokens = {word}
-            for part in re.split(r'[-_/\s]+', word):
-                part = part.strip()
-                if part:
-                    tokens.add(part)
-            for token in tokens:
-                add_token(token, idx)
-
-        word_pattern = re.compile(r'\b\w[\w\-_/]*\b')
-        word_spans = list(word_pattern.finditer(text))
-
-        freq = {}
-        kwic_results = {}
-        collocations = {}
-        window = 5
-
-        for spec in keyword_specs:
-            label = spec['label']
-            tokens = spec['tokens']
-            pattern = compile_keyword_pattern(tokens)
-            matches = list(pattern.finditer(text_lower)) if pattern else []
-
-            freq[label] = len(matches)
-
-            snippets = []
-            for match in matches:
-                snippet = build_snippet(text, match.start(), match.end(), word_spans, window=window)
-                if snippet:
-                    snippets.append(snippet)
-                if len(snippets) >= 3:
-                    break
-            kwic_results[label] = snippets
-
-            if len(tokens) == 1:
-                token = tokens[0]
-                indices = token_index.get(token, [])
-                left_neighbors, right_neighbors = [], []
-                for i in indices:
-                    if i > 0:
-                        left_neighbors.append(words[i - 1])
-                    if i < len(words) - 1:
-                        right_neighbors.append(words[i + 1])
-                collocations[label] = {
-                    "left": Counter(left_neighbors).most_common(3),
-                    "right": Counter(right_neighbors).most_common(3)
-                }
             else:
-                collocations[label] = {"left": [], "right": []}
+                return jsonify({'error': 'Unsupported file type'}), 400
+        except ValueError as extraction_error:
+            logging.warning(f"Document validation error: {extraction_error}")
+            return jsonify({'error': str(extraction_error)}), 400
+        except Exception as extraction_error:
+            logging.error(f"Document extraction error: {extraction_error}")
+            return jsonify({'error': 'Failed to extract text from the document.'}), 400
 
-        density = {
-            label: round((freq[label] / total_words) * 100, 2) if total_words > 0 else 0
-            for label in freq
-        }
-
-        # Sentiment
-        blob = TextBlob(text)
-        sentiment = {
-            'polarity': blob.sentiment.polarity,
-            'subjectivity': blob.sentiment.subjectivity
-        }
-
-        # Readability
-        sentences = re.split(r'(?<=[.!?])\s+', text)
-        num_sentences = len([s for s in sentences if s.strip()])
-        num_syllables = sum(len(w) // 3 for w in words)
-        asl = total_words / max(1, num_sentences)
-        asw = num_syllables / max(1, total_words)
-        flesch_score = round(206.835 - 1.015 * asl - 84.6 * asw, 2)
-
-        readability = {
-            'flesch_reading_ease': flesch_score,
-            'total_words': total_words,
-            'total_sentences': num_sentences
-        }
-
-        # Technological trends
-        trends = [
-            "Artificial Intelligence", "Blockchain", "Big Data Analytics", "Internet of Things",
-            "Digital Twin", "5G Network", "Robotics", "Autonomous Systems", "Virtual Reality",
-            "Augmented Reality", "Cloud Computing", "Edge Computing", "Fog Computing"
-        ]
-        trend_results = []
-        for trend in trends:
-            trend_lower = trend.lower()
-            matches = [s.strip() for s in sentences if trend_lower in s.lower()]
-            if matches:
-                trend_results.append({
-                    'trend': trend,
-                    'count': len(matches),
-                    'contexts': matches[:3]
-                })
-
-        # Word cloud
-        nonzero_freq = {k: v for k, v in freq.items() if v > 0}
-        img_data_url = None
-        if nonzero_freq:
-            wc = WordCloud(width=800, height=400, background_color='white')
-            wc.generate_from_frequencies(nonzero_freq)
-            img_io = io.BytesIO()
-            plt.figure(figsize=(10, 5))
-            plt.imshow(wc, interpolation='bilinear')
-            plt.axis('off')
-            plt.tight_layout(pad=0)
-            plt.savefig(img_io, format='PNG')
-            plt.close()
-            img_io.seek(0)
-            img_base64 = base64.b64encode(img_io.getvalue()).decode('utf-8')
-            img_data_url = f"data:image/png;base64,{img_base64}"
+        try:
+            analysis_payload, img_data_url, words = analyze_document(text, user_keywords)
+        except ValueError as analysis_error:
+            logging.warning(f"Analysis validation error: {analysis_error}")
+            return jsonify({'error': str(analysis_error)}), 400
 
         # Store document content for search functionality
         doc_id = f"doc_{len(uploaded_documents) + 1}"
@@ -593,29 +128,17 @@ def analyze():
             'filename': filename,
             'text': text,
             'words': words,
-            'analysis_result': {
-                'frequencies': freq,
-                'densities': density,
-                'kwic': kwic_results,
-                'collocations': collocations,
-                'sentiment': sentiment,
-                'readability': readability,
-                'trends': trend_results
-            }
+            'analysis_result': analysis_payload
         }
         logging.info(f"Stored document {doc_id} with {len(words)} words")
 
-        return jsonify({
-            'frequencies': freq,
-            'densities': density,
-            'kwic': kwic_results,
-            'collocations': collocations,
+        response_payload = dict(analysis_payload)
+        response_payload.update({
             'image': img_data_url,
-            'sentiment': sentiment,
-            'readability': readability,
-            'trends': trend_results,
-            'document_id': doc_id  # Return document ID for reference
+            'document_id': doc_id
         })
+
+        return jsonify(response_payload)
 
     except Exception as e:
         logging.error(f"Analysis failed: {e}")

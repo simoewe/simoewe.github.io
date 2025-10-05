@@ -1,6 +1,14 @@
 import React, { useMemo, useState } from 'react';
 import '../TextAnalyzer.css';
 
+const TREND_STATUS_ORDER = ['using', 'evaluating', 'discontinued', 'unspecified'];
+const TREND_STATUS_LABELS = {
+  using: 'Im Einsatz',
+  evaluating: 'Bewertung & Planung',
+  discontinued: 'Nicht mehr genutzt',
+  unspecified: 'Unklar'
+};
+
 const TextAnalyzer = ({ analysisResult, loading, analysisProgress = 0, analysisSteps = [], customKeywords = [] }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [expandedSections, setExpandedSections] = useState({
@@ -109,7 +117,8 @@ const TextAnalyzer = ({ analysisResult, loading, analysisProgress = 0, analysisS
     );
   }
 
-  const { image, kwic, collocations, frequencies, densities, sentiment, readability, trends } = analysisResult;
+  const { image, kwic, collocations, frequencies, densities, sentiment, readability, trends, trendInsights } = analysisResult;
+  const insights = trendInsights || [];
 
   const frequencyEntries = frequencies ? Object.entries(frequencies) : [];
   const technologyFrequencyEntries = frequencyEntries.filter(([keyword]) => !customKeywordSet.has(keyword.toLowerCase()));
@@ -134,6 +143,7 @@ const TextAnalyzer = ({ analysisResult, loading, analysisProgress = 0, analysisS
   const tabs = [
     { id: 'overview', label: 'Overview', icon: '📊' },
     { id: 'wordcloud', label: 'Word Cloud', icon: '☁️' },
+    { id: 'trends', label: 'Trends', icon: '📉' },
     { id: 'details', label: 'Details', icon: '🔍' },
     { id: 'metrics', label: 'Metrics', icon: '📈' }
   ];
@@ -266,6 +276,66 @@ const TextAnalyzer = ({ analysisResult, loading, analysisProgress = 0, analysisS
               <div className="no-wordcloud">
                 <div className="placeholder-icon">☁️</div>
                 <p>Word cloud not available for this analysis</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'trends' && (
+          <div className="trends-overview">
+            {insights.length > 0 ? (
+              insights.map((item) => {
+                const statusCounts = item.status_counts || {};
+                const evidence = item.evidence || [];
+                const mentionLabel = item.total_mentions === 1 ? 'Erwähnung' : 'Erwähnungen';
+
+                return (
+                  <div key={item.trend} className="trend-card">
+                    <div className="trend-card-header">
+                      <div className="trend-card-title">
+                        <h3 className="trend-card-name">{item.trend}</h3>
+                        <span className="trend-card-count">{item.total_mentions} {mentionLabel}</span>
+                      </div>
+                      <p className="trend-summary">{item.summary}</p>
+                    </div>
+
+                    <div className="trend-status-row">
+                      {TREND_STATUS_ORDER.map((status) => {
+                        const count = statusCounts[status] || 0;
+                        if (!count) {
+                          return null;
+                        }
+                        return (
+                          <span key={status} className={`trend-status-badge trend-status-${status}`}>
+                            {TREND_STATUS_LABELS[status]} · {count}
+                          </span>
+                        );
+                      })}
+                    </div>
+
+                    {evidence.length > 0 && (
+                      <div className="trend-evidence">
+                        {evidence.map((sample, idx) => {
+                          const sampleStatus = sample.status || 'unspecified';
+                          const statusLabel = TREND_STATUS_LABELS[sampleStatus] || TREND_STATUS_LABELS.unspecified;
+                          return (
+                            <div key={idx} className="trend-evidence-item">
+                              <span className={`trend-evidence-status trend-status-${sampleStatus}`}>
+                                {statusLabel}
+                              </span>
+                              <p className="trend-evidence-text">"{sample.sentence}"</p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            ) : (
+              <div className="no-trends">
+                <div className="placeholder-icon">📉</div>
+                <p>Keine Trend-Einsichten für dieses Dokument.</p>
               </div>
             )}
           </div>
