@@ -9,7 +9,15 @@ const TREND_STATUS_LABELS = {
   unspecified: 'Unclear'
 };
 
-const TextAnalyzer = ({ analysisResult, loading, analysisProgress = 0, analysisSteps = [], customKeywords = [] }) => {
+const TextAnalyzer = ({
+  analysisResult,
+  loading,
+  analysisProgress = 0,
+  analysisSteps = [],
+  customKeywords = [],
+  pdfUrl = null,
+  onNavigateToPdf,
+}) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [expandedSections, setExpandedSections] = useState({
     kwic: false,
@@ -57,6 +65,73 @@ const TextAnalyzer = ({ analysisResult, loading, analysisProgress = 0, analysisS
   const customKeywordSet = useMemo(() => {
     return new Set(uniqueCustomKeywords.map((keyword) => keyword.toLowerCase()));
   }, [uniqueCustomKeywords]);
+
+  const escapeRegExp = (value = "") => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+  const highlightSnippet = (snippet, matchText) => {
+    if (!snippet) {
+      return snippet;
+    }
+    if (!matchText) {
+      return snippet;
+    }
+    const escaped = escapeRegExp(matchText);
+    if (!escaped) {
+      return snippet;
+    }
+    const regex = new RegExp(`(${escaped})`, 'ig');
+    const parts = snippet.split(regex);
+    if (parts.length === 1) {
+      return snippet;
+    }
+    return parts.map((part, idx) =>
+      idx % 2 === 1 ? (
+        <mark key={idx}>{part}</mark>
+      ) : (
+        <span key={idx}>{part}</span>
+      )
+    );
+  };
+
+  const normalizeContextEntry = (context) => {
+    if (!context) {
+      return {
+        snippet: '',
+        page: null,
+        matchText: '',
+        start: null,
+        end: null
+      };
+    }
+    if (typeof context === 'string') {
+      return {
+        snippet: context,
+        page: null,
+        matchText: '',
+        start: null,
+        end: null
+      };
+    }
+    return {
+      snippet: context.snippet || '',
+      page: context.page ?? context.page_number ?? null,
+      matchText: context.match_text || context.matchText || '',
+      start: context.start ?? null,
+      end: context.end ?? null
+    };
+  };
+
+  const getPdfLink = (page, term) => {
+    if (!pdfUrl || !page) {
+      return null;
+    }
+    const base = pdfUrl.split('#')[0];
+    const params = [`page=${page}`];
+    if (term) {
+      params.push(`search=${encodeURIComponent(term)}`);
+    }
+    return `${base}#${params.join('&')}`;
+  };
 
   if (loading) {
     const clampedProgress = Math.max(0, Math.min(analysisProgress, 100));
@@ -359,11 +434,49 @@ const TextAnalyzer = ({ analysisResult, loading, analysisProgress = 0, analysisS
                       <div key={idx} className="kwic-keyword">
                         <h4 className="keyword-title">{keyword}</h4>
                         <div className="context-list">
-                          {contexts.slice(0, 5).map((context, i) => (
-                            <div key={i} className="context-item">
-                              <span className="context-text">{context}</span>
-                            </div>
-                          ))}
+                          {contexts.slice(0, 5).map((context, i) => {
+                            const normalized = normalizeContextEntry(context);
+                            const snippetContent = highlightSnippet(
+                              normalized.snippet,
+                              normalized.matchText || keyword
+                            );
+                            const pdfLink = getPdfLink(normalized.page, normalized.matchText || keyword);
+                            const pageLabel = normalized.page ? `Page ${normalized.page}` : null;
+                            const handleViewerJump = () => {
+                              if (typeof onNavigateToPdf === 'function') {
+                                onNavigateToPdf(normalized.page, normalized.matchText || keyword);
+                              }
+                            };
+                            return (
+                              <div key={i} className="context-item">
+                                <span className="context-text">{snippetContent}</span>
+                                {(pageLabel || pdfLink) && (
+                                  <div className="context-meta">
+                                    {pageLabel && <span className="context-page">{pageLabel}</span>}
+                                    {normalized.page && (
+                                      <button
+                                        type="button"
+                                        className="context-action"
+                                        onClick={handleViewerJump}
+                                      >
+                                        Jump in viewer
+                                      </button>
+                                    )}
+                                    {pdfLink && (
+                                      <a
+                                        className="context-action"
+                                        href={pdfLink}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                      >
+                                        Open in new tab
+                                      </a>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
                           {contexts.length > 5 && (
                             <div className="show-more">
                               +{contexts.length - 5} more contexts

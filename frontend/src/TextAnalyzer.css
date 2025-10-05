@@ -434,6 +434,41 @@
   line-height: 1.5;
 }
 
+.context-text mark {
+  background-color: #fef08a;
+  padding: 0 2px;
+  border-radius: 2px;
+}
+
+.context-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 12px;
+}
+
+.context-page {
+  color: #4b5563;
+  font-weight: 600;
+}
+
+.context-action {
+  background: none;
+  border: none;
+  color: #1f4f84;
+  cursor: pointer;
+  padding: 0;
+  font-size: 12px;
+  text-decoration: underline;
+}
+
+.context-action:hover,
+.context-action:focus {
+  color: #0f3054;
+}
+
 .show-more {
   color: #6b7280;
   font-size: 14px;

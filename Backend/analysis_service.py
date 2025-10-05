@@ -67,7 +67,7 @@ def generate_wordcloud(freq):
     return f"data:image/png;base64,{img_base64}"
 
 
-def analyze_document(text, user_keywords):
+def analyze_document(text, user_keywords, text_metadata=None):
     text_lower = text.lower()
     words = [w.strip(".,!?;:()[]") for w in text_lower.split() if w.strip(".,!?;:()[]")]
     total_words = len(words)
@@ -105,6 +105,31 @@ def analyze_document(text, user_keywords):
     collocations = {}
     window = 5
 
+    page_map = []
+    if text_metadata and isinstance(text_metadata, dict):
+        pages = text_metadata.get('pages') or []
+        if isinstance(pages, list):
+            page_map = [
+                {
+                    'number': page.get('number'),
+                    'start': page.get('start', 0),
+                    'end': page.get('end', 0)
+                }
+                for page in pages
+                if page and 'number' in page
+            ]
+
+    def find_page_for_offset(offset):
+        if not page_map:
+            return None
+        for page in page_map:
+            start = page.get('start', 0)
+            end = page.get('end', start)
+            if start <= offset < end:
+                return page.get('number')
+        # If offset is at or beyond the last recorded end, assume last page
+        return page_map[-1].get('number')
+
     for spec in keyword_specs:
         label = spec['label']
         tokens = spec['tokens']
@@ -113,14 +138,20 @@ def analyze_document(text, user_keywords):
 
         freq[label] = len(matches)
 
-        snippets = []
+        contexts = []
         for match in matches:
             snippet = build_snippet(text, match.start(), match.end(), word_spans, window=window)
             if snippet:
-                snippets.append(snippet)
-            if len(snippets) >= 3:
+                contexts.append({
+                    'snippet': snippet,
+                    'page': find_page_for_offset(match.start()),
+                    'start': match.start(),
+                    'end': match.end(),
+                    'match_text': text[match.start():match.end()].strip()
+                })
+            if len(contexts) >= 5:
                 break
-        kwic_results[label] = snippets
+        kwic_results[label] = contexts
 
         if len(tokens) == 1:
             token = tokens[0]

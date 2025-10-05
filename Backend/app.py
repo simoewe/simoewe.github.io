@@ -110,12 +110,25 @@ def analyze():
         user_keywords = [w.strip() for w in raw_keywords.split(',') if w.strip()]
 
         try:
+            text_metadata = None
+
+            def build_default_metadata(extracted_text):
+                return {
+                    'pages': [{
+                        'number': 1,
+                        'start': 0,
+                        'end': len(extracted_text or '')
+                    }]
+                }
+
             if filename.endswith('.pdf'):
-                text = extract_text_pdf(file)
+                text, text_metadata = extract_text_pdf(file, return_metadata=True)
             elif filename.endswith('.docx'):
                 text = extract_text_docx(file)
+                text_metadata = build_default_metadata(text)
             elif filename.endswith('.txt'):
                 text = extract_text_txt(file)
+                text_metadata = build_default_metadata(text)
             else:
                 return jsonify({'error': 'Unsupported file type'}), 400
         except ValueError as extraction_error:
@@ -126,7 +139,11 @@ def analyze():
             return jsonify({'error': 'Failed to extract text from the document.'}), 400
 
         try:
-            analysis_payload, img_data_url, words = analyze_document(text, user_keywords)
+            analysis_payload, img_data_url, words = analyze_document(
+                text,
+                user_keywords,
+                text_metadata
+            )
         except ValueError as analysis_error:
             logging.warning(f"Analysis validation error: {analysis_error}")
             return jsonify({'error': str(analysis_error)}), 400
@@ -137,14 +154,16 @@ def analyze():
             'filename': filename,
             'text': text,
             'words': words,
-            'analysis_result': analysis_payload
+            'analysis_result': analysis_payload,
+            'metadata': text_metadata
         }
         logging.info(f"Stored document {doc_id} with {len(words)} words")
 
         response_payload = dict(analysis_payload)
         response_payload.update({
             'image': img_data_url,
-            'document_id': doc_id
+            'document_id': doc_id,
+            'pageMap': (text_metadata or {}).get('pages', [])
         })
 
         return jsonify(response_payload)

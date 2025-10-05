@@ -21,6 +21,7 @@ function App() {
   const [libraryLoading, setLibraryLoading] = useState(false);
   const [error, setError] = useState("");
   const [pdfUrl, setPdfUrl] = useState(null);
+  const [pdfViewerSrc, setPdfViewerSrc] = useState(null);
   const localPdfUrlRef = useRef(null);
   const progressIntervalRef = useRef(null);
   const stepTimeoutsRef = useRef([]);
@@ -125,6 +126,7 @@ function App() {
     if (!uploadedFile) {
       setFile(null);
       setPdfUrl(null);
+      setPdfViewerSrc(null);
       return;
     }
 
@@ -132,6 +134,7 @@ function App() {
     localPdfUrlRef.current = objectUrl;
 
     setPdfUrl(objectUrl);
+    setPdfViewerSrc(objectUrl);
     setFile(uploadedFile);
     setAnalysisResult(null);
     setError("");
@@ -154,6 +157,7 @@ function App() {
 
     setLibraryLoading(true);
     setPdfUrl(url);
+    setPdfViewerSrc(url);
     setFile(null);
     setAnalysisResult(null);
     setError("");
@@ -173,6 +177,7 @@ function App() {
       console.error("Failed to load library document", fetchErr);
       setError("Failed to load document from library. Please try again.");
       setPdfUrl(null);
+      setPdfViewerSrc(null);
     } finally {
       setLibraryLoading(false);
     }
@@ -184,7 +189,33 @@ function App() {
       localPdfUrlRef.current = null;
     }
     setPdfUrl(null);
+    setPdfViewerSrc(null);
   };
+
+  const navigateToPdfLocation = useCallback((page, term) => {
+    if (!pdfUrl) {
+      return null;
+    }
+    const base = pdfUrl.split('#')[0];
+    const params = [];
+    if (page) {
+      params.push(`page=${page}`);
+    }
+    if (term) {
+      params.push(`search=${encodeURIComponent(term)}`);
+    }
+    const hash = params.length ? `#${params.join('&')}` : '';
+    const nextSrc = `${base}${hash}`;
+    setPdfViewerSrc((prev) => {
+      if (prev === nextSrc) {
+        const separator = nextSrc.includes('#') ? '&' : '#';
+        const reloadMarker = `${nextSrc}${separator}_tick=${Date.now()}`;
+        return reloadMarker;
+      }
+      return nextSrc;
+    });
+    return nextSrc;
+  }, [pdfUrl]);
 
   const handleSearch = async () => {
     if (libraryLoading) {
@@ -275,6 +306,8 @@ function App() {
                         analysisProgress={analysisProgress}
                         analysisSteps={analysisSteps}
                         customKeywords={submittedKeywords}
+                        pdfUrl={pdfUrl}
+                        onNavigateToPdf={navigateToPdfLocation}
                       />
                     </div>
                   </div>
@@ -296,7 +329,8 @@ function App() {
                     </div>
                     <iframe
                       title="pdf-viewer"
-                      src={pdfUrl}
+                      src={pdfViewerSrc || pdfUrl}
+                      key={pdfViewerSrc || pdfUrl || 'pdf-viewer'}
                       style={{ flex: 1, width: "100%", border: "none" }}
                     />
                   </div>
