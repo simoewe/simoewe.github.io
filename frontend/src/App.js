@@ -306,7 +306,6 @@ function App() {
                         analysisProgress={analysisProgress}
                         analysisSteps={analysisSteps}
                         customKeywords={submittedKeywords}
-                        pdfUrl={pdfUrl}
                         onNavigateToPdf={navigateToPdfLocation}
                       />
                     </div>

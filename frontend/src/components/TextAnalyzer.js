@@ -15,7 +15,6 @@ const TextAnalyzer = ({
   analysisProgress = 0,
   analysisSteps = [],
   customKeywords = [],
-  pdfUrl = null,
   onNavigateToPdf,
 }) => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -119,18 +118,6 @@ const TextAnalyzer = ({
       start: context.start ?? null,
       end: context.end ?? null
     };
-  };
-
-  const getPdfLink = (page, term) => {
-    if (!pdfUrl || !page) {
-      return null;
-    }
-    const base = pdfUrl.split('#')[0];
-    const params = [`page=${page}`];
-    if (term) {
-      params.push(`search=${encodeURIComponent(term)}`);
-    }
-    return `${base}#${params.join('&')}`;
   };
 
   if (loading) {
@@ -440,7 +427,6 @@ const TextAnalyzer = ({
                               normalized.snippet,
                               normalized.matchText || keyword
                             );
-                            const pdfLink = getPdfLink(normalized.page, normalized.matchText || keyword);
                             const pageLabel = normalized.page ? `Page ${normalized.page}` : null;
                             const handleViewerJump = () => {
                               if (typeof onNavigateToPdf === 'function') {
@@ -450,7 +436,7 @@ const TextAnalyzer = ({
                             return (
                               <div key={i} className="context-item">
                                 <span className="context-text">{snippetContent}</span>
-                                {(pageLabel || pdfLink) && (
+                                {(pageLabel || normalized.page) && (
                                   <div className="context-meta">
                                     {pageLabel && <span className="context-page">{pageLabel}</span>}
                                     {normalized.page && (
@@ -461,16 +447,6 @@ const TextAnalyzer = ({
                                       >
                                         Jump in viewer
                                       </button>
-                                    )}
-                                    {pdfLink && (
-                                      <a
-                                        className="context-action"
-                                        href={pdfLink}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                      >
-                                        Open in new tab
-                                      </a>
                                     )}
                                   </div>
                                 )}
