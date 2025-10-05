@@ -193,11 +193,6 @@ def optimize_pdf_bytes(file_bytes):
                             xobjects.pop(key, None)
                             images_removed += 1
 
-                try:
-                    page.compress_content_streams()
-                except Exception:
-                    pass
-
                 writer.add_page(page)
             except Exception:
                 writer.add_page(page)

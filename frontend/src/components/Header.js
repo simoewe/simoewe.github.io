@@ -371,6 +371,16 @@ export default function Header({ onPickFromLibrary, technologyTerms }) {
               </button>
             </div>
             <form className="code-form" onSubmit={handleCodeSubmit}>
+              {verifyingCode && (
+                <div className="code-progress" aria-live="polite">
+                  <div className="code-progress-bar">
+                    <div className="code-progress-fill" />
+                  </div>
+                  <p className="code-progress-text">
+                    Verifiziere Zugangscode … das kann beim ersten Mal einen Moment dauern.
+                  </p>
+                </div>
+              )}
               <label htmlFor="visibility-code">Bitte Zugangscode eingeben</label>
               <input
                 id="visibility-code"
