@@ -168,7 +168,7 @@ def extract_text_pdf(file_stream):
             pymupdf_text, pymupdf_pages = extract_text_pymupdf(original_file_bytes, reason_label="initial")
             if pymupdf_pages and pymupdf_pages > MAX_PDF_PAGES:
                 logging.info(f"PDF rejected due to page limit (PyMuPDF count): {pymupdf_pages} pages")
-                raise ValueError(f"PDF überschreitet das Seitenlimit von {MAX_PDF_PAGES} Seiten.")
+                raise ValueError(f"PDF exceeds the page limit of {MAX_PDF_PAGES} pages.")
             if pymupdf_text:
                 return pymupdf_text
 
@@ -194,7 +194,7 @@ def extract_text_pdf(file_stream):
         page_count = len(reader.pages)
         if page_count > MAX_PDF_PAGES:
             logging.info(f"PDF rejected due to page limit: {page_count} pages")
-            raise ValueError(f"PDF überschreitet das Seitenlimit von {MAX_PDF_PAGES} Seiten.")
+            raise ValueError(f"PDF exceeds the page limit of {MAX_PDF_PAGES} pages.")
 
         text = ''
         for page_num, page in enumerate(reader.pages):

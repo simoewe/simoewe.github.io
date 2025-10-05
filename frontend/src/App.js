@@ -26,10 +26,10 @@ function App() {
   const stepTimeoutsRef = useRef([]);
 
   const DEFAULT_ANALYSIS_STEPS = useMemo(() => ([
-    { id: 'upload', label: 'Upload & Validierung' },
-    { id: 'extract', label: 'Textextraktion' },
-    { id: 'analyze', label: 'Trend-Analyse' },
-    { id: 'finalize', label: 'Ergebnisaufbereitung' }
+    { id: 'upload', label: 'Upload & validation' },
+    { id: 'extract', label: 'Text extraction' },
+    { id: 'analyze', label: 'Trend analysis' },
+    { id: 'finalize', label: 'Result preparation' }
   ]), []);
   const [analysisSteps, setAnalysisSteps] = useState(() =>
     DEFAULT_ANALYSIS_STEPS.map((step) => ({ ...step, status: 'pending' }))
@@ -289,9 +289,9 @@ function App() {
                 {pdfUrl ? (
                   <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
-                      <button onClick={handleBackToUpload}>Zurück zur Upload-Ansicht</button>
+                      <button onClick={handleBackToUpload}>Back to upload view</button>
                       <a href={pdfUrl} target="_blank" rel="noreferrer">
-                        Im neuen Tab öffnen
+                        Open in new tab
                       </a>
                     </div>
                     <iframe

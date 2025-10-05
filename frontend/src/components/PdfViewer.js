@@ -40,7 +40,7 @@ function RightPanel({ onFileUpload }) {
       return;
     }
 
-    setUploadStatus("✅ PDF geladen – bereit für die Analyse");
+    setUploadStatus("✅ PDF loaded — ready for analysis");
 
     if (onFileUpload) {
       onFileUpload(file);
@@ -70,10 +70,10 @@ function RightPanel({ onFileUpload }) {
       <div {...getRootProps({ className: "dropzone fullsize" })}>
         <input {...getInputProps()} />
         {isDragActive ? (
-          <p>Ziehe die PDF hierher…</p>
+          <p>Drop the PDF here…</p>
         ) : (
           <div style={{ textAlign: "center" }}>
-            <p>📄 PDF hochladen (Drag & Drop oder klicken)</p>
+            <p>📄 Upload PDF (drag & drop or click)</p>
             <p style={{ fontSize: "14px", color: "#666", marginTop: "10px" }}>
               Upload containerlogistics documents for analysis
             </p>

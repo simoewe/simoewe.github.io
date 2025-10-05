@@ -150,9 +150,9 @@ export default function Library({ onSelect }) {
       <div className="library-loading" role="status" aria-live="polite">
         <div className="spinner" aria-hidden="true" />
         <div>
-          <p className="library-loading-title">Bibliothek wird geladen…</p>
+          <p className="library-loading-title">Loading library…</p>
           <p className="library-loading-hint">
-            Hinweis: Der erste Abruf kann aufgrund der Cloud-Anbindung bis zu einer Minute dauern.
+            Note: The first request can take up to a minute because of the cloud connection.
           </p>
         </div>
       </div>
@@ -176,7 +176,7 @@ export default function Library({ onSelect }) {
           {renderFolder(tree, 0)}
         </div>
       ) : (
-        <p className="library-empty">Keine Dokumente verfügbar.</p>
+        <p className="library-empty">No documents available.</p>
       )}
     </div>
   );

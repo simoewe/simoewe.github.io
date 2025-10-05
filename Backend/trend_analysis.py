@@ -32,27 +32,35 @@ def build_trend_summary(trend, status_counts):
     evaluating = status_counts.get('evaluating', 0)
     discontinued = status_counts.get('discontinued', 0)
 
+    def ref_label(count):
+        return 'reference' if count == 1 else 'references'
+
     if discontinued and discontinued > max(using, evaluating):
-        suffix = 'Hinweis' if discontinued == 1 else 'Hinweise'
-        return f"Das Unternehmen setzt {trend} nicht mehr ein ({discontinued} {suffix})."
+        return (
+            f"The company no longer uses {trend} "
+            f"({discontinued} {ref_label(discontinued)})."
+        )
 
     summary_parts = []
     if using:
-        suffix = 'Hinweis' if using == 1 else 'Hinweise'
-        summary_parts.append(f"nutzt {trend} ({using} {suffix})")
+        summary_parts.append(
+            f"actively uses {trend} ({using} {ref_label(using)})"
+        )
     if evaluating:
-        suffix = 'Hinweis' if evaluating == 1 else 'Hinweise'
-        summary_parts.append(f"bewertet oder plant {trend} ({evaluating} {suffix})")
+        summary_parts.append(
+            f"is evaluating or planning {trend} "
+            f"({evaluating} {ref_label(evaluating)})"
+        )
 
     if not summary_parts:
-        return f"{trend} wird erwähnt, ohne klare Aussage zur Nutzung."
+        return f"{trend} is mentioned without a clear usage statement."
 
     if len(summary_parts) == 1:
         joined = summary_parts[0]
     else:
-        joined = ", ".join(summary_parts[:-1]) + " und " + summary_parts[-1]
+        joined = ", ".join(summary_parts[:-1]) + " and " + summary_parts[-1]
 
-    return f"Das Unternehmen {joined}."
+    return f"The company {joined}."
 
 
 def analyze_trends(sentences):

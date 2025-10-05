@@ -74,7 +74,10 @@ def analyze_document(text, user_keywords):
 
     if total_words > MAX_WORDS_ANALYSIS:
         logging.info(f"Document rejected due to length: {total_words} words")
-        raise ValueError(f'Dokument zu umfangreich (Limit {MAX_WORDS_ANALYSIS:,} Wörter). Bitte kürzere Datei wählen.')
+        raise ValueError(
+            f'Document too large (limit {MAX_WORDS_ANALYSIS:,} words). '
+            'Please choose a shorter file.'
+        )
 
     keyword_specs = build_keyword_specs(user_keywords)
 

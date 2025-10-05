@@ -3,10 +3,10 @@ import '../TextAnalyzer.css';
 
 const TREND_STATUS_ORDER = ['using', 'evaluating', 'discontinued', 'unspecified'];
 const TREND_STATUS_LABELS = {
-  using: 'Im Einsatz',
-  evaluating: 'Bewertung & Planung',
-  discontinued: 'Nicht mehr genutzt',
-  unspecified: 'Unklar'
+  using: 'In use',
+  evaluating: 'Evaluating & planning',
+  discontinued: 'No longer in use',
+  unspecified: 'Unclear'
 };
 
 const TextAnalyzer = ({ analysisResult, loading, analysisProgress = 0, analysisSteps = [], customKeywords = [] }) => {
@@ -287,7 +287,7 @@ const TextAnalyzer = ({ analysisResult, loading, analysisProgress = 0, analysisS
               insights.map((item) => {
                 const statusCounts = item.status_counts || {};
                 const evidence = item.evidence || [];
-                const mentionLabel = item.total_mentions === 1 ? 'Erwähnung' : 'Erwähnungen';
+                const mentionLabel = item.total_mentions === 1 ? 'reference' : 'references';
 
                 return (
                   <div key={item.trend} className="trend-card">
@@ -335,7 +335,7 @@ const TextAnalyzer = ({ analysisResult, loading, analysisProgress = 0, analysisS
             ) : (
               <div className="no-trends">
                 <div className="placeholder-icon">📉</div>
-                <p>Keine Trend-Einsichten für dieses Dokument.</p>
+                <p>No trend insights for this document.</p>
               </div>
             )}
           </div>

@@ -58,12 +58,12 @@ export default function Header({ onPickFromLibrary, technologyTerms }) {
 
     const trimmed = codeInput.trim();
     if (!trimmed) {
-      setCodeError("Bitte Zugangscode eingeben.");
+      setCodeError("Please enter the access code.");
       return;
     }
 
     if (trimmed.length > 128) {
-      setCodeError("Code ist zu lang. Bitte kürzeren Zugangscode verwenden.");
+      setCodeError("Code is too long. Please use a shorter access code.");
       return;
     }
 
@@ -100,13 +100,13 @@ export default function Header({ onPickFromLibrary, technologyTerms }) {
       }
 
       if (resp.status === 403 || data.valid === false) {
-        setCodeError("Code ist ungültig. Bitte erneut versuchen.");
+        setCodeError("Code is invalid. Please try again.");
         return;
       }
 
-      throw new Error(data.error || "Verifikation fehlgeschlagen.");
+      throw new Error(data.error || "Verification failed.");
     } catch (err) {
-      setCodeError(err.message || "Verifikation fehlgeschlagen.");
+      setCodeError(err.message || "Verification failed.");
     } finally {
       setVerifyingCode(false);
     }
@@ -117,19 +117,19 @@ export default function Header({ onPickFromLibrary, technologyTerms }) {
       <nav className="navbar">
         <div className="logo">
           <img src={UHH_Logo} alt="logo" className="logo-img" />
-          <span className="logo-text">Projekt <b>Stahlbock</b></span>
+          <span className="logo-text">Project <b>Stahlbock</b></span>
         </div>
 
         <ul className="nav-rechts">
           <li>
-            <button onClick={() => setShowTechnologies(true)}>Technologien</button>
+            <button onClick={() => setShowTechnologies(true)}>Technologies</button>
           </li>
           <li>Option</li>
           <li>
             <button onClick={handleLibraryClick}>Library</button>
           </li>
           <li>
-            <button onClick={() => setShowImpressum(true)}>Impressum</button>
+            <button onClick={() => setShowImpressum(true)}>Legal notice</button>
           </li>
         </ul>
       </nav>
@@ -153,7 +153,7 @@ export default function Header({ onPickFromLibrary, technologyTerms }) {
                 type="button"
                 className="modal-close"
                 onClick={closeLibrary}
-                aria-label="Library schließen"
+                aria-label="Close library"
               >
                 ×
               </button>
@@ -184,31 +184,31 @@ export default function Header({ onPickFromLibrary, technologyTerms }) {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="modal-header">
-              <h2 id="impressum-title">Impressum gemäß § 5 DDG</h2>
+              <h2 id="impressum-title">Legal notice (Sec. 5 DDG)</h2>
               <button
                 type="button"
                 className="modal-close"
                 onClick={() => setShowImpressum(false)}
-                aria-label="Impressum schließen"
+                aria-label="Close legal notice"
               >
                 ×
               </button>
             </div>
             <div className="modal-body">
               <section>
-                <h3>Projektangaben</h3>
+                <h3>Project information</h3>
                 <p>
-                  <strong>Projektname:</strong> Masterprojekt Stahlbock<br />
-                  <strong>Trägerinstitution:</strong> University of Hamburg Business School, Institut für Wirtschaftsinformatik<br />
-                  <strong>Anschrift:</strong> Von-Melle-Park 5, 20146 Hamburg
+                  <strong>Project name:</strong> Master Project Stahlbock<br />
+                  <strong>Host institution:</strong> University of Hamburg Business School, Department of Information Systems<br />
+                  <strong>Address:</strong> Von-Melle-Park 5, 20146 Hamburg
                 </p>
               </section>
 
               <section>
-                <h3>Kontakt</h3>
+                <h3>Contact</h3>
                 <p>
-                  <strong>Ansprechperson:</strong> Simon Laatz<br />
-                  <strong>E-Mail:</strong>{" "}
+                  <strong>Contact person:</strong> Simon Laatz<br />
+                  <strong>Email:</strong>{" "}
                   <a href="mailto:simon.laatz@studium.uni-hamburg.de">
                     simon.laatz@studium.uni-hamburg.de
                   </a>
@@ -216,7 +216,7 @@ export default function Header({ onPickFromLibrary, technologyTerms }) {
               </section>
 
               <section>
-                <h3>Verantwortlich gemäß § 18 Abs. 2 MStV</h3>
+                <h3>Responsible under Sec. 18(2) MStV</h3>
                 <p>
                   Simon Laatz<br />
                   [ggf. Adresse]
@@ -224,53 +224,50 @@ export default function Header({ onPickFromLibrary, technologyTerms }) {
               </section>
 
               <section>
-                <h3>Haftung für Inhalte</h3>
+                <h3>Liability for content</h3>
                 <p>
-                  Die Inhalte dieser Website wurden mit größter Sorgfalt erstellt. Für die Richtigkeit,
-                  Vollständigkeit und Aktualität der Inhalte übernehmen wir jedoch keine Gewähr. Das Webtool
-                  dient ausschließlich wissenschaftlichen Forschungs- und Lehrzwecken im Rahmen eines
-                  universitären Projekts. Eine kommerzielle Nutzung ist ausgeschlossen.
+                  The content of this website has been prepared with great care. Nevertheless, we cannot
+                  guarantee that the information is accurate, complete, or up to date. The web tool is provided
+                  solely for academic research and teaching purposes within a university project. Commercial use
+                  is excluded.
                 </p>
               </section>
 
               <section>
-                <h3>Nutzung von Dokumenten</h3>
+                <h3>Use of documents</h3>
                 <p>
-                  Im Rahmen dieses Projekts werden öffentlich zugängliche Unternehmensberichte gesammelt und in
-                  einer zugangsbeschränkten, nicht-öffentlichen Cloud verarbeitet. Die Cloud ist nur für
-                  Projektteilnehmerinnen und Projektteilnehmer zugänglich. Eine öffentliche Bereitstellung oder
-                  Weiterverbreitung dieser Dokumente erfolgt nicht. Sämtliche Urheber- und Nutzungsrechte
-                  verbleiben bei den jeweiligen Unternehmen oder Herausgebern. Sollten Rechteinhaber Einwände
-                  gegen die Nutzung im Rahmen dieses Projekts haben, bitten wir um eine kurze Nachricht. In
-                  diesem Fall werden die betroffenen Inhalte unverzüglich entfernt.
+                  This project collects publicly available corporate reports and processes them in a restricted,
+                  non-public cloud environment. Access is limited to project participants. The documents are not
+                  published or redistributed. All copyrights and usage rights remain with the respective
+                  companies or publishers. If rights holders object to the use within this project, please let us
+                  know. The affected materials will be removed immediately.
                 </p>
               </section>
 
               <section>
-                <h3>Haftung für externe Links</h3>
+                <h3>Liability for external links</h3>
                 <p>
-                  Diese Website enthält Links zu externen Webseiten Dritter, auf deren Inhalte wir keinen
-                  Einfluss haben. Deshalb übernehmen wir für diese fremden Inhalte auch keine Gewähr. Für die
-                  Inhalte der verlinkten Seiten ist stets der jeweilige Anbieter oder Betreiber verantwortlich.
+                  This website contains links to external third-party websites over whose content we have no
+                  control. Therefore, we cannot assume liability for this external content. The respective
+                  provider or operator of the linked pages is always responsible for their content.
                 </p>
               </section>
 
               <section>
-                <h3>Datenschutz</h3>
+                <h3>Data protection</h3>
                 <p>
-                  Dieses Projekt verarbeitet ausschließlich Dokumente, die bereits öffentlich zugänglich sind.
-                  Sollten dennoch unbeabsichtigt personenbezogene Daten enthalten sein, werden diese im Rahmen
-                  des Projekts nicht weiterverarbeitet und auf Anfrage entfernt. Weitere Informationen zum
-                  Datenschutz: <a href="#">[Link zu einer evtl. vorhandenen Datenschutzerklärung]</a>
+                  This project processes only documents that are already publicly accessible. Should personal
+                  data inadvertently be included, it will not be further processed and will be removed upon
+                  request. Further information on data protection: <a href="#">[Link to a potential privacy policy]</a>
                 </p>
               </section>
 
               <section>
-                <h3>Nicht-kommerzieller Charakter</h3>
+                <h3>Non-commercial purpose</h3>
                 <p>
-                  Dieses Webtool ist Teil eines universitären Forschungsprojekts und dient ausschließlich
-                  akademischen Zwecken. Eine kommerzielle Nutzung, Vervielfältigung oder Weitergabe der im Rahmen
-                  des Projekts verwendeten Dokumente ist nicht gestattet.
+                  This web tool is part of a university research project and serves academic purposes only.
+                  Commercial use, reproduction, or redistribution of the documents processed within the project
+                  is not permitted.
                 </p>
               </section>
             </div>
@@ -292,19 +289,19 @@ export default function Header({ onPickFromLibrary, technologyTerms }) {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="modal-header">
-              <h2 id="technologies-title">Technologie-Begriffe</h2>
+              <h2 id="technologies-title">Technology terms</h2>
               <button
                 type="button"
                 className="modal-close"
                 onClick={() => setShowTechnologies(false)}
-                aria-label="Technologie-Übersicht schließen"
+                aria-label="Close technology overview"
               >
                 ×
               </button>
             </div>
             <div className="modal-body">
               <section>
-                <h3>Standardbegriffe</h3>
+                <h3>Standard terms</h3>
                 {uniqueDefaultTerms.length > 0 ? (
                   <ul className="technology-list">
                     {uniqueDefaultTerms.map((term) => (
@@ -312,12 +309,12 @@ export default function Header({ onPickFromLibrary, technologyTerms }) {
                     ))}
                   </ul>
                 ) : (
-                  <p>Keine Standardbegriffe konfiguriert.</p>
+                  <p>No standard terms configured.</p>
                 )}
               </section>
 
               <section>
-                <h3>Eigene Stichwörter</h3>
+                <h3>Custom keywords</h3>
                 {uniqueCustomTerms.length > 0 ? (
                   <ul className="technology-list">
                     {uniqueCustomTerms.map((term) => (
@@ -325,12 +322,12 @@ export default function Header({ onPickFromLibrary, technologyTerms }) {
                     ))}
                   </ul>
                 ) : (
-                  <p>Derzeit wurden keine zusätzlichen Stichwörter hinzugefügt.</p>
+                  <p>No additional keywords have been added yet.</p>
                 )}
               </section>
 
               <section>
-                <h3>Gesamte Analysebegriffe</h3>
+                <h3>All analysis terms</h3>
                 {combinedTerms.length > 0 ? (
                   <ul className="technology-list columns">
                     {combinedTerms.map((term) => (
@@ -338,7 +335,7 @@ export default function Header({ onPickFromLibrary, technologyTerms }) {
                     ))}
                   </ul>
                 ) : (
-                  <p>Keine Begriffe vorhanden.</p>
+                  <p>No terms available.</p>
                 )}
               </section>
             </div>
@@ -360,12 +357,12 @@ export default function Header({ onPickFromLibrary, technologyTerms }) {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="modal-header">
-              <h2 id="code-prompt-title">Zugangscode erforderlich</h2>
+              <h2 id="code-prompt-title">Access code required</h2>
               <button
                 type="button"
                 className="modal-close"
                 onClick={closeCodePrompt}
-                aria-label="Codeeingabe schließen"
+                aria-label="Close code entry"
               >
                 ×
               </button>
@@ -377,11 +374,11 @@ export default function Header({ onPickFromLibrary, technologyTerms }) {
                     <div className="code-progress-fill" />
                   </div>
                   <p className="code-progress-text">
-                    Verifiziere Zugangscode … das kann beim ersten Mal einen Moment dauern.
+                    Verifying access code … this may take a moment the first time.
                   </p>
-                </div>
+              </div>
               )}
-              <label htmlFor="visibility-code">Bitte Zugangscode eingeben</label>
+              <label htmlFor="visibility-code">Please enter the access code</label>
               <input
                 id="visibility-code"
                 type="password"
@@ -393,10 +390,10 @@ export default function Header({ onPickFromLibrary, technologyTerms }) {
               {codeError && <p className="code-error">{codeError}</p>}
               <div className="code-actions">
                 <button type="button" onClick={closeCodePrompt} disabled={verifyingCode}>
-                  Abbrechen
+                  Cancel
                 </button>
                 <button type="submit" disabled={verifyingCode}>
-                  {verifyingCode ? "Prüfe…" : "Bestätigen"}
+                  {verifyingCode ? "Verifying…" : "Confirm"}
                 </button>
               </div>
             </form>
