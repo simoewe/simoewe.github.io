@@ -33,13 +33,6 @@ function RightPanel({ onFileUpload }) {
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      const error = "❌ File too large (max 5MB)";
-      setFileTypeError(error);
-      setUploadStatus(error);
-      return;
-    }
-
     setUploadStatus("✅ PDF loaded — ready for analysis");
 
     if (onFileUpload) {
@@ -51,7 +44,6 @@ function RightPanel({ onFileUpload }) {
     onDrop,
     accept: { "application/pdf": [".pdf"], "application/x-pdf": [".pdf"] },
     multiple: false,
-    maxSize: 5 * 1024 * 1024,
     onDropRejected: (rejectedFiles) => {
       const reasons = rejectedFiles
         .map((file) => file.errors.map((err) => err.message).join(", "))
