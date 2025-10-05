@@ -7,6 +7,7 @@ textblob
 PyPDF2
 pycryptodome
 pdfminer.six
+PyMuPDF
 python-docx
 wordcloud
 matplotlib

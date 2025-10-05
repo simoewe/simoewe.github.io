@@ -7,6 +7,10 @@ try:
     from pdfminer.high_level import extract_text as pdfminer_extract_text
 except ImportError:  # pdfminer is optional but preferred for complex PDFs
     pdfminer_extract_text = None
+try:
+    import fitz  # PyMuPDF
+except ImportError:
+    fitz = None
 from docx import Document
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
@@ -68,8 +72,8 @@ ALLOWED_EXTENSIONS = {'.pdf', '.docx', '.txt'}
 MAX_PDF_PAGES = 300
 MAX_WORDS_ANALYSIS = 120_000
 PDF_OPTIMIZE_THRESHOLD_BYTES = 8 * 1024 * 1024  # 8 MB
-PDF_PREFER_PDFMINER_BYTES = 5 * 1024 * 1024  # Prefer pdfminer for large files
-PDF_PREFER_PDFMINER_PAGES = 120
+PDF_PDFMINER_MAX_BYTES = 4 * 1024 * 1024  # Don't send very large PDFs to pdfminer
+PDF_PDFMINER_MAX_PAGES = 80
 
 DEFAULT_TREND_KEYWORDS = [
     "Artificial Intelligence",
@@ -223,6 +227,40 @@ def optimize_pdf_bytes(file_bytes):
     return file_bytes
 
 
+def extract_text_pymupdf(file_bytes, reason_label="preferred"):
+    """Extract text using PyMuPDF for complex PDFs."""
+    if not fitz or not isinstance(file_bytes, (bytes, bytearray)):
+        return None, None
+
+    doc = None
+    try:
+        doc = fitz.open(stream=file_bytes, filetype="pdf")
+        page_count = doc.page_count
+        text_buffer = io.StringIO()
+        for page_index, page in enumerate(doc):
+            page_text = page.get_text("text") or ""
+            if page_text:
+                text_buffer.write(page_text)
+                if not page_text.endswith("\n"):
+                    text_buffer.write("\n")
+        extracted = text_buffer.getvalue().strip()
+        if extracted:
+            logging.info(
+                "PyMuPDF extraction (%s) succeeded on %s pages",
+                reason_label,
+                page_count
+            )
+            return extracted, page_count
+        logging.warning("PyMuPDF extraction (%s) returned empty text", reason_label)
+        return None, page_count
+    except Exception as pymupdf_error:
+        logging.warning(f"PyMuPDF extraction ({reason_label}) failed: {pymupdf_error}")
+        return None, getattr(doc, "page_count", None)
+    finally:
+        if doc is not None:
+            doc.close()
+
+
 def extract_text_pdf(file_stream):
     try:
         # Log file details for debugging
@@ -239,6 +277,18 @@ def extract_text_pdf(file_stream):
         file_bytes = file_stream.read()
         if isinstance(file_bytes, str):
             file_bytes = file_bytes.encode('utf-8')
+
+        original_file_bytes = file_bytes
+
+        pymupdf_text = None
+        pymupdf_pages = None
+        if fitz:
+            pymupdf_text, pymupdf_pages = extract_text_pymupdf(original_file_bytes, reason_label="initial")
+            if pymupdf_pages and pymupdf_pages > MAX_PDF_PAGES:
+                logging.info(f"PDF rejected due to page limit (PyMuPDF count): {pymupdf_pages} pages")
+                raise ValueError(f"PDF überschreitet das Seitenlimit von {MAX_PDF_PAGES} Seiten.")
+            if pymupdf_text:
+                return pymupdf_text
 
         file_bytes = optimize_pdf_bytes(file_bytes)
 
@@ -264,23 +314,6 @@ def extract_text_pdf(file_stream):
         if page_count > MAX_PDF_PAGES:
             logging.info(f"PDF rejected due to page limit: {page_count} pages")
             raise ValueError(f"PDF überschreitet das Seitenlimit von {MAX_PDF_PAGES} Seiten.")
-        prefer_pdfminer = (
-            pdfminer_extract_text is not None and (
-                len(file_bytes) >= PDF_PREFER_PDFMINER_BYTES or
-                page_count >= PDF_PREFER_PDFMINER_PAGES
-            )
-        )
-        pdfminer_attempted = False
-        if prefer_pdfminer:
-            try:
-                miner_text = pdfminer_extract_text(io.BytesIO(file_bytes), password="")
-                pdfminer_attempted = True
-                if miner_text and miner_text.strip():
-                    logging.info("pdfminer extraction preferred for large/complex PDF")
-                    return miner_text
-                logging.warning("pdfminer preferred path yielded empty text; falling back to PyPDF2")
-            except Exception as miner_pref_error:
-                logging.warning(f"pdfminer preferred path failed: {miner_pref_error}; falling back to PyPDF2")
 
         text = ''
         for page_num, page in enumerate(reader.pages):
@@ -295,7 +328,13 @@ def extract_text_pdf(file_stream):
 
         logging.info("PyPDF2 returned little/no text; attempting pdfminer fallback")
 
-        if pdfminer_extract_text and not pdfminer_attempted:
+        allow_pdfminer = (
+            pdfminer_extract_text is not None
+            and len(file_bytes) <= PDF_PDFMINER_MAX_BYTES
+            and page_count <= PDF_PDFMINER_MAX_PAGES
+        )
+
+        if allow_pdfminer:
             try:
                 miner_text = pdfminer_extract_text(io.BytesIO(file_bytes), password="")
                 if miner_text and miner_text.strip():
@@ -309,6 +348,12 @@ def extract_text_pdf(file_stream):
 
         if not pdfminer_extract_text:
             logging.warning("pdfminer.six not installed; cannot improve extraction result")
+        elif not allow_pdfminer:
+            logging.info(
+                "Skipped pdfminer fallback due to size/page constraints (size=%s bytes, pages=%s)",
+                len(file_bytes),
+                page_count
+            )
         return text
     except Exception as e:
         logging.error(f"PDF extraction failed: {e}")

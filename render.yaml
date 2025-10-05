@@ -14,7 +14,7 @@ services:
       - key: FRONTEND_URL
         value: https://simoewe-github-io-1-cdi0.onrender.com
       - key: GUNICORN_CMD_ARGS
-        value: "--timeout 180 --graceful-timeout 210 --max-requests 20"
+        value: "--timeout 600 --graceful-timeout 630 --max-requests 20"
 
   # --- Frontend Service (React) ---
   - type: static_site
