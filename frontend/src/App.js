@@ -9,10 +9,27 @@ import {
   Panel,
   PanelResizeHandle
 } from 'react-resizable-panels';
-import { DEFAULT_TECHNOLOGY_TERMS } from "./constants/technologies";
+import { DEFAULT_TECHNOLOGY_TERMS, GERMAN_TECHNOLOGY_TERMS } from "./constants/technologies";
+
+const parseKeywordString = (raw) => {
+  if (!raw) return [];
+  const seen = new Set();
+  return raw
+    .split(',')
+    .map((term) => term.trim())
+    .filter((term) => {
+      if (!term) return false;
+      const lowered = term.toLowerCase();
+      if (seen.has(lowered)) return false;
+      seen.add(lowered);
+      return true;
+    });
+};
+
+const formatKeywordString = (list) => list.join(', ');
 
 function App() {
-  const [keywords, setKeywords] = useState("");
+  const [keywords, setKeywords] = useState(() => formatKeywordString(DEFAULT_TECHNOLOGY_TERMS));
   const [file, setFile] = useState(null);
   const [analysisResult, setAnalysisResult] = useState(null);
   const [submittedKeywords, setSubmittedKeywords] = useState([]);
@@ -97,21 +114,59 @@ function App() {
   }, [clearAnalysisTimers]);
 
   const handleKeywordsChange = useCallback((input) => {
-    if (typeof input === "string") {
-      setKeywords(input);
-      return;
-    }
-    const nextValue = input?.target?.value;
-    setKeywords(typeof nextValue === "string" ? nextValue : "");
+    const raw =
+      typeof input === "string"
+        ? input
+        : typeof input === "object"
+          ? input?.target?.value || ""
+          : "";
+    const normalized = parseKeywordString(raw);
+    setKeywords(formatKeywordString(normalized));
   }, []);
 
-  const userKeywordList = useMemo(
+  const userKeywordList = useMemo(() => parseKeywordString(keywords), [keywords]);
+
+  const keywordSet = useMemo(
+    () => new Set(userKeywordList.map((term) => term.toLowerCase())),
+    [userKeywordList]
+  );
+
+  const englishDefaultSet = useMemo(
+    () => new Set(DEFAULT_TECHNOLOGY_TERMS.map((term) => term.toLowerCase())),
+    []
+  );
+
+  const germanDefaultSet = useMemo(
+    () => new Set(GERMAN_TECHNOLOGY_TERMS.map((term) => term.toLowerCase())),
+    []
+  );
+
+  const activeEnglishDefaults = useMemo(
+    () => DEFAULT_TECHNOLOGY_TERMS.filter((term) => keywordSet.has(term.toLowerCase())),
+    [keywordSet]
+  );
+
+  const activeGermanDefaults = useMemo(
+    () => GERMAN_TECHNOLOGY_TERMS.filter((term) => keywordSet.has(term.toLowerCase())),
+    [keywordSet]
+  );
+
+  const customKeywordList = useMemo(
     () =>
-      keywords
-        .split(',')
-        .map((k) => k.trim())
-        .filter(Boolean),
-    [keywords]
+      userKeywordList.filter((term) => {
+        const lowered = term.toLowerCase();
+        return !englishDefaultSet.has(lowered) && !germanDefaultSet.has(lowered);
+      }),
+    [englishDefaultSet, germanDefaultSet, userKeywordList]
+  );
+
+  const technologyTerms = useMemo(
+    () => ({
+      englishDefaultTerms: activeEnglishDefaults,
+      germanDefaultTerms: activeGermanDefaults,
+      customTerms: customKeywordList,
+    }),
+    [activeEnglishDefaults, activeGermanDefaults, customKeywordList]
   );
 
   useEffect(() => {
@@ -272,10 +327,7 @@ function App() {
     <div className="app">
       <Header
         onPickFromLibrary={handleLibraryPick}
-        technologyTerms={{
-          defaultTerms: DEFAULT_TECHNOLOGY_TERMS,
-          customTerms: userKeywordList
-        }}
+        technologyTerms={technologyTerms}
         keywordsValue={keywords}
         onKeywordsChange={handleKeywordsChange}
       />
@@ -289,21 +341,24 @@ function App() {
                 <Panel defaultSize={20} minSize={15} maxSize={30}>
                   <div className="inner-container top" style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative', padding: '8px', overflowY: 'auto' }}>
                     <div style={{ flex: 1, minHeight: '80px', marginBottom: '16px', paddingRight: '2px' }}>
-                      <div className="keyword-summary">
-                        <h3>Custom keywords</h3>
+                      <div className="analysis-term-card">
+                        <div className="analysis-term-header">
+                          <h3>All analysis terms</h3>
+                          <span className="analysis-term-count">Total: {userKeywordList.length}</span>
+                        </div>
                         {userKeywordList.length > 0 ? (
-                          <ul className="keyword-summary-list">
+                          <ul className="technology-list columns analysis-term-list">
                             {userKeywordList.map((keyword) => (
-                              <li key={keyword}>{keyword}</li>
+                              <li key={`analysis-${keyword}`}>{keyword}</li>
                             ))}
                           </ul>
                         ) : (
-                          <p className="keyword-summary-empty">
-                            No custom keywords selected. Open the Technologies menu to add some.
+                          <p className="analysis-term-empty">
+                            No analysis terms selected yet.
                           </p>
                         )}
-                        <p className="keyword-summary-hint">
-                          Manage technology terms via the Technologies button in the navigation bar.
+                        <p className="analysis-term-hint">
+                          Manage analysis terms via the Technologies menu.
                         </p>
                       </div>
                     </div>

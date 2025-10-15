@@ -22,10 +22,20 @@ export default function Header({
 
   const closeLibrary = () => setShowLib(false);
 
-  const { defaultTerms = [], customTerms = [] } = technologyTerms || {};
-  const uniqueDefaultTerms = useMemo(
-    () => Array.from(new Set(defaultTerms)).sort((a, b) => a.localeCompare(b)),
-    [defaultTerms]
+  const {
+    englishDefaultTerms = [],
+    germanDefaultTerms = [],
+    customTerms = [],
+  } = technologyTerms || {};
+
+  const uniqueEnglishDefaultTerms = useMemo(
+    () => Array.from(new Set(englishDefaultTerms)).sort((a, b) => a.localeCompare(b)),
+    [englishDefaultTerms]
+  );
+  const uniqueGermanDefaultTerms = useMemo(
+    () =>
+      Array.from(new Set(germanDefaultTerms)).sort((a, b) => a.localeCompare(b)),
+    [germanDefaultTerms]
   );
   const uniqueCustomTerms = useMemo(
     () =>
@@ -34,20 +44,13 @@ export default function Header({
       ),
     [customTerms]
   );
-  const combinedTerms = useMemo(
-    () =>
-      Array.from(
-        new Set([...uniqueDefaultTerms, ...uniqueCustomTerms].map((term) => term.trim()))
-      ).sort((a, b) => a.localeCompare(b)),
-    [uniqueDefaultTerms, uniqueCustomTerms]
-  );
-  const [germanFeedback, setGermanFeedback] = useState("");
+  const [technologyFeedback, setTechnologyFeedback] = useState("");
 
   useEffect(() => {
-    if (!germanFeedback) return;
-    const timeoutId = setTimeout(() => setGermanFeedback(""), 4000);
+    if (!technologyFeedback) return;
+    const timeoutId = setTimeout(() => setTechnologyFeedback(""), 4000);
     return () => clearTimeout(timeoutId);
-  }, [germanFeedback]);
+  }, [technologyFeedback]);
 
   const handleLibraryClick = () => {
     if (libraryAccessGranted) {
@@ -136,29 +139,67 @@ export default function Header({
     onKeywordsChange(nextValue);
   };
 
-  const handleAddGermanTerms = () => {
-    if (!onKeywordsChange) return;
-    const customNormalized = new Set(
-      (customTerms || []).map((term) => term.trim().toLowerCase()).filter(Boolean)
-    );
-    const defaultNormalized = new Set(
-      (defaultTerms || DEFAULT_TECHNOLOGY_TERMS).map((term) => term.trim().toLowerCase())
-    );
+  const getCurrentKeywords = () =>
+    (keywordsValue || "")
+      .split(",")
+      .map((term) => term.trim())
+      .filter(Boolean);
 
-    const additions = GERMAN_TECHNOLOGY_TERMS.filter((term) => {
-      const normalized = term.trim().toLowerCase();
-      return !customNormalized.has(normalized) && !defaultNormalized.has(normalized);
+  const addTerms = (terms, label) => {
+    if (!onKeywordsChange) return;
+    const current = getCurrentKeywords();
+    const seen = new Set(current.map((term) => term.toLowerCase()));
+    let added = 0;
+
+    const next = [...current];
+    terms.forEach((term) => {
+      const trimmed = term.trim();
+      if (!trimmed) return;
+      const lowered = trimmed.toLowerCase();
+      if (seen.has(lowered)) {
+        return;
+      }
+      seen.add(lowered);
+      next.push(trimmed);
+      added += 1;
     });
 
-    if (!additions.length) {
-      setGermanFeedback("Alle deutschen Keywords sind bereits enthalten.");
+    if (added === 0) {
+      setTechnologyFeedback(`No ${label.toLowerCase()} left to add.`);
       return;
     }
 
-    const updatedTerms = [...(customTerms || []), ...additions];
-    handleKeywordsChange(updatedTerms.join(", "));
-    setGermanFeedback(`${additions.length} deutsche Keywords hinzugefügt.`);
+    handleKeywordsChange(next.join(", "));
+    setTechnologyFeedback(`Added ${added} ${label.toLowerCase()}.`);
   };
+
+  const removeTerms = (terms, label) => {
+    if (!onKeywordsChange) return;
+    const removalSet = new Set(
+      terms.map((term) => term.trim().toLowerCase()).filter(Boolean)
+    );
+    if (!removalSet.size) {
+      setTechnologyFeedback(`No ${label.toLowerCase()} available to remove.`);
+      return;
+    }
+
+    const current = getCurrentKeywords();
+    const next = current.filter((term) => !removalSet.has(term.toLowerCase()));
+    const removed = current.length - next.length;
+
+    if (removed === 0) {
+      setTechnologyFeedback(`No ${label.toLowerCase()} found to remove.`);
+      return;
+    }
+
+    handleKeywordsChange(next.join(", "));
+    setTechnologyFeedback(`Removed ${removed} ${label.toLowerCase()}.`);
+  };
+
+  const handleAddGermanTerms = () => addTerms(GERMAN_TECHNOLOGY_TERMS, "German terms");
+  const handleRemoveGermanTerms = () => removeTerms(GERMAN_TECHNOLOGY_TERMS, "German terms");
+  const handleAddEnglishTerms = () => addTerms(DEFAULT_TECHNOLOGY_TERMS, "English terms");
+  const handleRemoveEnglishTerms = () => removeTerms(DEFAULT_TECHNOLOGY_TERMS, "English terms");
 
   return (
     <header className="header">
@@ -349,29 +390,61 @@ export default function Header({
             </div>
             <div className="modal-body">
               <section className="technology-keyword-editor">
-                <h3>Individuelle Keywords</h3>
+                <h3>Keyword editor</h3>
                 <KeywordInput
                   value={keywordsValue}
                   onChange={handleKeywordsChange}
                 />
                 <div className="technology-actions">
-                  <button type="button" onClick={handleAddGermanTerms}>
-                    Deutsche Standardbegriffe hinzufügen
-                  </button>
-                  {germanFeedback && <p className="technology-feedback">{germanFeedback}</p>}
+                  <div className="technology-action-group">
+                    <span className="technology-action-label">Deutsche Suchbegriffe</span>
+                    <div className="technology-action-buttons">
+                      <button type="button" onClick={handleAddGermanTerms}>
+                        Add
+                      </button>
+                      <button type="button" onClick={handleRemoveGermanTerms}>
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                  <div className="technology-action-group">
+                    <span className="technology-action-label">Englische Suchbegriffe</span>
+                    <div className="technology-action-buttons">
+                      <button type="button" onClick={handleAddEnglishTerms}>
+                        Add
+                      </button>
+                      <button type="button" onClick={handleRemoveEnglishTerms}>
+                        Remove
+                      </button>
+                    </div>
+                  </div>
                 </div>
+                {technologyFeedback && <p className="technology-feedback">{technologyFeedback}</p>}
               </section>
 
               <section>
-                <h3>Standard terms</h3>
-                {uniqueDefaultTerms.length > 0 ? (
+                <h3>Active English terms</h3>
+                {uniqueEnglishDefaultTerms.length > 0 ? (
                   <ul className="technology-list">
-                    {uniqueDefaultTerms.map((term) => (
+                    {uniqueEnglishDefaultTerms.map((term) => (
                       <li key={`default-${term}`}>{term}</li>
                     ))}
                   </ul>
                 ) : (
-                  <p>No standard terms configured.</p>
+                  <p>No English defaults selected.</p>
+                )}
+              </section>
+
+              <section>
+                <h3>Active German terms</h3>
+                {uniqueGermanDefaultTerms.length > 0 ? (
+                  <ul className="technology-list">
+                    {uniqueGermanDefaultTerms.map((term) => (
+                      <li key={`german-${term}`}>{term}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p>No German defaults selected.</p>
                 )}
               </section>
 
@@ -385,19 +458,6 @@ export default function Header({
                   </ul>
                 ) : (
                   <p>No additional keywords have been added yet.</p>
-                )}
-              </section>
-
-              <section>
-                <h3>All analysis terms</h3>
-                {combinedTerms.length > 0 ? (
-                  <ul className="technology-list columns">
-                    {combinedTerms.map((term) => (
-                      <li key={`combined-${term}`}>{term}</li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p>No terms available.</p>
                 )}
               </section>
             </div>
