@@ -163,15 +163,6 @@ function App() {
     [englishDefaultSet, germanDefaultSet, userKeywordList]
   );
 
-  const technologyTerms = useMemo(
-    () => ({
-      englishDefaultTerms: activeEnglishDefaults,
-      germanDefaultTerms: activeGermanDefaults,
-      customTerms: customKeywordList,
-    }),
-    [activeEnglishDefaults, activeGermanDefaults, customKeywordList]
-  );
-
   useEffect(() => {
     if (!technologyFeedback) return;
     const timer = setTimeout(() => setTechnologyFeedback(""), 4000);
@@ -419,117 +410,57 @@ function App() {
             <div className="pane-content" style={{ height: '100%' }}>
               <PanelGroup direction="vertical" autoSaveId="layout-vertical">
                 <Panel defaultSize={20} minSize={15} maxSize={30}>
-                  <div className="inner-container top" style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative', padding: '8px', overflowY: 'auto' }}>
-                    <div style={{ flex: 1, minHeight: '80px', marginBottom: '16px', paddingRight: '2px' }}>
-                      <div className="technology-management">
-                        <section className="technology-keyword-editor">
-                          <div className="technology-editor-header">
-                            <h3>Keyword editor</h3>
-                            <span className="technology-editor-count">Total: {userKeywordList.length}</span>
-                          </div>
-                          <KeywordInput
-                            value={keywords}
-                            onChange={handleKeywordsChange}
-                          />
-                          <div className="technology-actions">
-                            <div className="technology-action-group">
-                              <span className="technology-action-label">English search terms</span>
-                              <div className="technology-action-buttons">
-                                <button type="button" onClick={handleAddEnglishTerms}>
-                                  Add
-                                </button>
-                                <button type="button" onClick={handleRemoveEnglishTerms}>
-                                  Remove
-                                </button>
-                              </div>
-                            </div>
-                            <div className="technology-action-group">
-                              <span className="technology-action-label">German search terms</span>
-                              <div className="technology-action-buttons">
-                                <button type="button" onClick={handleAddGermanTerms}>
-                                  Add
-                                </button>
-                                <button type="button" onClick={handleRemoveGermanTerms}>
-                                  Remove
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                          {technologyFeedback && (
-                            <p className="technology-feedback">{technologyFeedback}</p>
-                          )}
-                        </section>
-
-                        <div className="technology-overview">
-                          <section className="technology-overview-block">
-                            <h4>Active English terms</h4>
-                            {technologyTerms.englishDefaultTerms.length ? (
-                              <ul className="technology-list">
-                                {technologyTerms.englishDefaultTerms.map((term) => (
-                                  <li key={`english-${term}`}>{term}</li>
-                                ))}
-                              </ul>
-                            ) : (
-                              <p className="technology-empty">No English defaults selected.</p>
-                            )}
-                          </section>
-                          <section className="technology-overview-block">
-                            <h4>Active German terms</h4>
-                            {technologyTerms.germanDefaultTerms.length ? (
-                              <ul className="technology-list">
-                                {technologyTerms.germanDefaultTerms.map((term) => (
-                                  <li key={`german-${term}`}>{term}</li>
-                                ))}
-                              </ul>
-                            ) : (
-                              <p className="technology-empty">No German defaults selected.</p>
-                            )}
-                          </section>
-                          <section className="technology-overview-block">
-                            <h4>Custom keywords</h4>
-                            {technologyTerms.customTerms.length ? (
-                              <ul className="technology-list">
-                                {technologyTerms.customTerms.map((term) => (
-                                  <li key={`custom-${term}`}>{term}</li>
-                                ))}
-                              </ul>
-                            ) : (
-                              <p className="technology-empty">No additional keywords added.</p>
-                            )}
-                          </section>
+                  <div className="inner-container top keyword-panel">
+                    <div className="keyword-panel-content">
+                      <section className="technology-keyword-editor">
+                        <div className="technology-editor-header">
+                          <h3>Keywords</h3>
+                          <span className="technology-editor-count">
+                            Total: {userKeywordList.length}
+                          </span>
                         </div>
-
-                        <section className="analysis-term-card">
-                          <div className="analysis-term-header">
-                            <h3>All analysis terms</h3>
-                            <span className="analysis-term-count">Total: {userKeywordList.length}</span>
+                        <KeywordInput
+                          value={keywords}
+                          onChange={handleKeywordsChange}
+                        />
+                        {technologyFeedback && (
+                          <p className="technology-feedback">{technologyFeedback}</p>
+                        )}
+                      </section>
+                      <div className="keyword-action-bar">
+                        <div className="technology-actions compact">
+                          <div className="technology-action-group">
+                            <span className="technology-action-label">English search terms</span>
+                            <div className="technology-action-buttons">
+                              <button type="button" onClick={handleAddEnglishTerms}>
+                                Add
+                              </button>
+                              <button type="button" onClick={handleRemoveEnglishTerms}>
+                                Remove
+                              </button>
+                            </div>
                           </div>
-                          {userKeywordList.length > 0 ? (
-                            <ul className="technology-list columns analysis-term-list">
-                              {userKeywordList.map((keyword) => (
-                                <li key={`analysis-${keyword}`}>{keyword}</li>
-                              ))}
-                            </ul>
-                          ) : (
-                            <p className="analysis-term-empty">
-                              No analysis terms selected yet.
-                            </p>
-                          )}
-                          <p className="analysis-term-hint">
-                            Manage analysis terms with the controls above.
-                          </p>
-                        </section>
+                          <div className="technology-action-group">
+                            <span className="technology-action-label">German search terms</span>
+                            <div className="technology-action-buttons">
+                              <button type="button" onClick={handleAddGermanTerms}>
+                                Add
+                              </button>
+                              <button type="button" onClick={handleRemoveGermanTerms}>
+                                Remove
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                        <button
+                          className="analyze-button"
+                          onClick={handleSearch}
+                          disabled={loading || libraryLoading}
+                        >
+                          {libraryLoading ? "Loading document..." : loading ? "Analyzing..." : "Analyze"}
+                        </button>
                       </div>
-                    </div>
-                    <div className="analyze-footer">
-                      <button 
-                        onClick={handleSearch} 
-                        style={{ height: '40px', width: '100%' }}
-                        disabled={loading || libraryLoading}
-                      >
-                        {libraryLoading ? "Loading document..." : loading ? "Analyzing..." : "Analyze"}
-                      </button>
-                      {error && <div style={{ color: 'red', marginTop: '8px' }}>{error}</div>}
+                      {error && <div className="keyword-error">{error}</div>}
                     </div>
                   </div>
                 </Panel>

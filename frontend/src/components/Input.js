@@ -82,7 +82,7 @@ const KeywordInput = ({ value, onChange }) => {
   return (
     <div className="keyword-input-container">
       <div className="input-header">
-        <label htmlFor="keyword-input">Keywords (optional)</label>
+        <label htmlFor="keyword-input">Keywords</label>
         {keywords.length > 0 && (
           <button
             type="button"

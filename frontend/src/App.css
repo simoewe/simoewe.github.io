@@ -165,63 +165,6 @@ html {
   height: 100%;
 }
 
-.analysis-term-card {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 16px 18px;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  background: #f8fafc;
-  height: 100%;
-}
-
-.analysis-term-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.analysis-term-header h3 {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: #1f2937;
-}
-
-.analysis-term-count {
-  font-size: 13px;
-  color: #475569;
-  background: #e2e8f0;
-  padding: 2px 10px;
-  border-radius: 999px;
-}
-
-.analysis-term-list {
-  margin-top: 4px;
-  gap: 10px 16px;
-}
-
-.analysis-term-empty {
-  margin: 0;
-  font-size: 14px;
-  color: #475569;
-}
-
-.analysis-term-hint {
-  margin: 0;
-  font-size: 12px;
-  color: #64748b;
-  line-height: 1.4;
-}
-
-.technology-management {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
 .technology-editor-header {
   display: flex;
   align-items: center;
@@ -242,33 +185,41 @@ html {
   border-radius: 999px;
 }
 
-.technology-overview {
+.keyword-panel {
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+}
+
+.keyword-panel-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  height: 100%;
+}
+
+.keyword-action-bar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.technology-actions.compact {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 12px;
 }
 
-.technology-overview-block {
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 14px 16px;
-  background: #ffffff;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+.analyze-button {
+  min-width: 160px;
+  height: 42px;
 }
 
-.technology-overview-block h4 {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 600;
-  color: #1f2937;
-}
-
-.technology-empty {
-  margin: 0;
-  font-size: 13px;
-  color: #64748b;
+.keyword-error {
+  color: #b91c1c;
+  font-size: 14px;
 }
 
 /* Custom Panel Resizers with Modern Design */
@@ -1171,30 +1122,6 @@ textarea:focus {
     color: #ffffff;
   }
 
-  .analysis-term-card {
-    background: rgba(30, 41, 59, 0.65);
-    border-color: rgba(148, 163, 184, 0.35);
-  }
-
-  .analysis-term-header h3 {
-    color: #e2e8f0;
-  }
-
-  .analysis-term-count {
-    background: rgba(148, 163, 184, 0.32);
-    color: #e2e8f0;
-  }
-
-  .analysis-term-list li {
-    background: rgba(226, 0, 26, 0.25);
-    color: #f8fafc;
-  }
-
-  .analysis-term-empty,
-  .analysis-term-hint {
-    color: #94a3b8;
-  }
-
   .technology-keyword-editor {
     border-color: rgba(148, 163, 184, 0.35);
     background: rgba(15, 23, 42, 0.85);
@@ -1203,19 +1130,6 @@ textarea:focus {
   .technology-editor-count {
     background: rgba(148, 163, 184, 0.32);
     color: #e2e8f0;
-  }
-
-  .technology-overview-block {
-    background: rgba(17, 24, 39, 0.92);
-    border-color: rgba(148, 163, 184, 0.3);
-  }
-
-  .technology-overview-block h4 {
-    color: #e2e8f0;
-  }
-
-  .technology-empty {
-    color: #94a3b8;
   }
 
   .inner-container,
