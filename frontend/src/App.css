@@ -191,35 +191,61 @@ html {
   padding: 12px;
 }
 
+.keyword-panel {
+  display: flex;
+  padding: 12px;
+}
+
 .keyword-panel-content {
+  flex: 1;
+  display: flex;
+}
+
+.keyword-layout {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+}
+
+.keyword-scrollable {
+  flex: 1;
+  max-height: 380px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.keyword-action-stack {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  height: 100%;
+  width: min(240px, 35%);
+  flex-shrink: 0;
 }
 
-.keyword-action-bar {
+.technology-action-column {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
 }
 
-.technology-actions.compact {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 12px;
+.technology-action-column button {
+  width: 100%;
 }
 
 .analyze-button {
-  min-width: 160px;
-  height: 42px;
+  height: 52px;
+  font-size: 17px;
+  font-weight: 600;
 }
 
 .keyword-error {
   color: #b91c1c;
   font-size: 14px;
+  margin-top: 12px;
 }
 
 /* Custom Panel Resizers with Modern Design */
@@ -1130,6 +1156,11 @@ textarea:focus {
   .technology-editor-count {
     background: rgba(148, 163, 184, 0.32);
     color: #e2e8f0;
+  }
+
+  .technology-action-column {
+    background: rgba(17, 24, 39, 0.92);
+    border-color: rgba(148, 163, 184, 0.3);
   }
 
   .inner-container,

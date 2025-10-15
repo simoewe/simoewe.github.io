@@ -392,66 +392,61 @@ function App() {
                 <Panel defaultSize={20} minSize={15} maxSize={30}>
                   <div className="inner-container top keyword-panel">
                     <div className="keyword-panel-content">
-                      <section className="technology-keyword-editor">
-                        <div className="technology-editor-header">
-                          <h3>Keywords</h3>
-                          <span className="technology-editor-count">
-                            Total: {userKeywordList.length}
-                          </span>
-                        </div>
-                        <KeywordInput
-                          value={keywords}
-                          onChange={handleKeywordsChange}
-                        />
-                        {technologyFeedback && (
-                          <p className="technology-feedback">{technologyFeedback}</p>
-                        )}
-                      </section>
-                      <div className="keyword-action-bar">
-                        <div className="technology-actions compact">
-                          <div className="technology-action-group">
+                      <div className="keyword-layout">
+                        <section className="technology-keyword-editor keyword-scrollable">
+                          <div className="technology-editor-header">
+                            <h3>Keywords</h3>
+                            <span className="technology-editor-count">
+                              Total: {userKeywordList.length}
+                            </span>
+                          </div>
+                          <KeywordInput
+                            value={keywords}
+                            onChange={handleKeywordsChange}
+                          />
+                          {technologyFeedback && (
+                            <p className="technology-feedback">{technologyFeedback}</p>
+                          )}
+                          {error && <div className="keyword-error">{error}</div>}
+                        </section>
+
+                        <aside className="keyword-action-stack">
+                          <div className="technology-action-column">
                             <span className="technology-action-label">English search terms</span>
-                            <div className="technology-action-buttons">
-                              <button type="button" onClick={handleAddEnglishTerms}>
-                                Add
-                              </button>
-                              <button type="button" onClick={handleRemoveEnglishTerms}>
-                                Remove
-                              </button>
-                            </div>
+                            <button type="button" onClick={handleAddEnglishTerms}>
+                              Add
+                            </button>
+                            <button type="button" onClick={handleRemoveEnglishTerms}>
+                              Remove
+                            </button>
                           </div>
-                          <div className="technology-action-group">
+                          <div className="technology-action-column">
                             <span className="technology-action-label">German search terms</span>
-                            <div className="technology-action-buttons">
-                              <button type="button" onClick={handleAddGermanTerms}>
-                                Add
-                              </button>
-                              <button type="button" onClick={handleRemoveGermanTerms}>
-                                Remove
-                              </button>
-                            </div>
+                            <button type="button" onClick={handleAddGermanTerms}>
+                              Add
+                            </button>
+                            <button type="button" onClick={handleRemoveGermanTerms}>
+                              Remove
+                            </button>
                           </div>
-                          <div className="technology-action-group">
+                          <div className="technology-action-column">
                             <span className="technology-action-label">Specialized technologies</span>
-                            <div className="technology-action-buttons">
-                              <button type="button" onClick={handleAddSpecializedTerms}>
-                                Add
-                              </button>
-                              <button type="button" onClick={handleRemoveSpecializedTerms}>
-                                Remove
-                              </button>
-                            </div>
+                            <button type="button" onClick={handleAddSpecializedTerms}>
+                              Add
+                            </button>
+                            <button type="button" onClick={handleRemoveSpecializedTerms}>
+                              Remove
+                            </button>
                           </div>
-                        </div>
-                        <button
-                          className="analyze-button"
-                          onClick={handleSearch}
-                          disabled={loading || libraryLoading}
-                        >
-                          {libraryLoading ? "Loading document..." : loading ? "Analyzing..." : "Analyze"}
-                        </button>
+                          <button
+                            className="analyze-button"
+                            onClick={handleSearch}
+                            disabled={loading || libraryLoading}
+                          >
+                            {libraryLoading ? "Loading document..." : loading ? "Analyzing..." : "Analyze"}
+                          </button>
+                        </aside>
                       </div>
-                      {error && <div className="keyword-error">{error}</div>}
                     </div>
                   </div>
                 </Panel>
