@@ -13,20 +13,31 @@ const KeywordInput = ({ value, onChange }) => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [filteredSuggestions, setFilteredSuggestions] = useState([]);
   const inputRef = useRef(null);
+  const lastValueRef = useRef('');
 
   // Initialize keywords from parent value
   useEffect(() => {
-    if (typeof value === 'string') {
-      const keywordArray = value.split(',').map(k => k.trim()).filter(k => k);
-      setKeywords(keywordArray);
-    } else if (!value) {
-      setKeywords([]);
+    if (typeof value !== 'string') {
+      if (!value && keywords.length) {
+        lastValueRef.current = '';
+        setKeywords([]);
+      }
+      return;
     }
-  }, [value]);
+
+    if (value === lastValueRef.current) {
+      return;
+    }
+
+    const keywordArray = value.split(',').map(k => k.trim()).filter(k => k);
+    lastValueRef.current = value;
+    setKeywords(keywordArray);
+  }, [value, keywords.length]);
 
   // Update parent when keywords change
   useEffect(() => {
     const keywordString = keywords.join(', ');
+    lastValueRef.current = keywordString;
     onChange({ target: { value: keywordString } });
   }, [keywords, onChange]);
 
