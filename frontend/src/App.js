@@ -411,23 +411,25 @@ function App() {
                         </section>
 
                         <aside className="keyword-action-stack">
-                          <div className="technology-action-column">
-                            <span className="technology-action-label">English search terms</span>
-                            <button type="button" onClick={handleAddEnglishTerms}>
-                              Add
-                            </button>
-                            <button type="button" onClick={handleRemoveEnglishTerms}>
-                              Remove
-                            </button>
-                          </div>
-                          <div className="technology-action-column">
-                            <span className="technology-action-label">German search terms</span>
-                            <button type="button" onClick={handleAddGermanTerms}>
-                              Add
-                            </button>
-                            <button type="button" onClick={handleRemoveGermanTerms}>
-                              Remove
-                            </button>
+                          <div className="technology-action-row">
+                            <div className="technology-action-column">
+                              <span className="technology-action-label">English search terms</span>
+                              <button type="button" onClick={handleAddEnglishTerms}>
+                                Add
+                              </button>
+                              <button type="button" onClick={handleRemoveEnglishTerms}>
+                                Remove
+                              </button>
+                            </div>
+                            <div className="technology-action-column">
+                              <span className="technology-action-label">German search terms</span>
+                              <button type="button" onClick={handleAddGermanTerms}>
+                                Add
+                              </button>
+                              <button type="button" onClick={handleRemoveGermanTerms}>
+                                Remove
+                              </button>
+                            </div>
                           </div>
                           <div className="technology-action-column">
                             <span className="technology-action-label">Specialized technologies</span>

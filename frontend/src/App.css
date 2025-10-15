@@ -209,7 +209,7 @@ html {
 
 .keyword-scrollable {
   flex: 1;
-  max-height: 380px;
+  max-height: 320px;
   overflow-y: auto;
   padding-right: 8px;
 }
@@ -218,8 +218,17 @@ html {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  width: min(240px, 35%);
+  width: min(260px, 38%);
   flex-shrink: 0;
+}
+
+.technology-action-row {
+  display: flex;
+  gap: 12px;
+}
+
+.technology-action-row .technology-action-column {
+  flex: 1;
 }
 
 .technology-action-column {
