@@ -1,9 +1,16 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import UHH_Logo from "../UHH_Logo.svg.png";
 import Library from "./Library";
 import { getApiBase } from "../utils/apiBase";
+import KeywordInput from "./Input";
+import { DEFAULT_TECHNOLOGY_TERMS, GERMAN_TECHNOLOGY_TERMS } from "../constants/technologies";
 
-export default function Header({ onPickFromLibrary, technologyTerms }) {
+export default function Header({
+  onPickFromLibrary,
+  technologyTerms,
+  keywordsValue,
+  onKeywordsChange,
+}) {
   const [showLib, setShowLib] = useState(false);
   const [showImpressum, setShowImpressum] = useState(false);
   const [showCodePrompt, setShowCodePrompt] = useState(false);
@@ -34,6 +41,13 @@ export default function Header({ onPickFromLibrary, technologyTerms }) {
       ).sort((a, b) => a.localeCompare(b)),
     [uniqueDefaultTerms, uniqueCustomTerms]
   );
+  const [germanFeedback, setGermanFeedback] = useState("");
+
+  useEffect(() => {
+    if (!germanFeedback) return;
+    const timeoutId = setTimeout(() => setGermanFeedback(""), 4000);
+    return () => clearTimeout(timeoutId);
+  }, [germanFeedback]);
 
   const handleLibraryClick = () => {
     if (libraryAccessGranted) {
@@ -110,6 +124,40 @@ export default function Header({ onPickFromLibrary, technologyTerms }) {
     } finally {
       setVerifyingCode(false);
     }
+  };
+
+  const handleKeywordsChange = (eventOrValue) => {
+    if (!onKeywordsChange) return;
+    if (typeof eventOrValue === "string") {
+      onKeywordsChange(eventOrValue);
+      return;
+    }
+    const nextValue = eventOrValue?.target?.value ?? "";
+    onKeywordsChange(nextValue);
+  };
+
+  const handleAddGermanTerms = () => {
+    if (!onKeywordsChange) return;
+    const customNormalized = new Set(
+      (customTerms || []).map((term) => term.trim().toLowerCase()).filter(Boolean)
+    );
+    const defaultNormalized = new Set(
+      (defaultTerms || DEFAULT_TECHNOLOGY_TERMS).map((term) => term.trim().toLowerCase())
+    );
+
+    const additions = GERMAN_TECHNOLOGY_TERMS.filter((term) => {
+      const normalized = term.trim().toLowerCase();
+      return !customNormalized.has(normalized) && !defaultNormalized.has(normalized);
+    });
+
+    if (!additions.length) {
+      setGermanFeedback("Alle deutschen Keywords sind bereits enthalten.");
+      return;
+    }
+
+    const updatedTerms = [...(customTerms || []), ...additions];
+    handleKeywordsChange(updatedTerms.join(", "));
+    setGermanFeedback(`${additions.length} deutsche Keywords hinzugefügt.`);
   };
 
   return (
@@ -300,6 +348,20 @@ export default function Header({ onPickFromLibrary, technologyTerms }) {
               </button>
             </div>
             <div className="modal-body">
+              <section className="technology-keyword-editor">
+                <h3>Individuelle Keywords</h3>
+                <KeywordInput
+                  value={keywordsValue}
+                  onChange={handleKeywordsChange}
+                />
+                <div className="technology-actions">
+                  <button type="button" onClick={handleAddGermanTerms}>
+                    Deutsche Standardbegriffe hinzufügen
+                  </button>
+                  {germanFeedback && <p className="technology-feedback">{germanFeedback}</p>}
+                </div>
+              </section>
+
               <section>
                 <h3>Standard terms</h3>
                 {uniqueDefaultTerms.length > 0 ? (

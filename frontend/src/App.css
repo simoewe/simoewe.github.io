@@ -165,6 +165,54 @@ html {
   height: 100%;
 }
 
+.keyword-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+  height: 100%;
+}
+
+.keyword-summary h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.keyword-summary-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.keyword-summary-list li {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  color: #1f2937;
+  font-size: 13px;
+}
+
+.keyword-summary-empty {
+  margin: 0;
+  font-size: 14px;
+  color: #475569;
+}
+
+.keyword-summary-hint {
+  margin: 0;
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.4;
+}
+
 /* Custom Panel Resizers with Modern Design */
 .custom-handle {
   width: 8px;
@@ -983,6 +1031,35 @@ textarea:focus {
   border: 1px solid #e5e7eb;
 }
 
+.technology-keyword-editor {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  background: #f8fafc;
+}
+
+.technology-keyword-editor h3 {
+  margin-top: 0;
+  margin-bottom: 12px;
+}
+
+.technology-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.technology-actions button {
+  align-self: flex-start;
+}
+
+.technology-feedback {
+  margin: 0;
+  font-size: 13px;
+  color: #047857;
+}
+
 @media (prefers-color-scheme: dark) {
   html, body, #root, .app {
     background: #0b1120;
@@ -1015,6 +1092,25 @@ textarea:focus {
   .nav-rechts li:hover {
     background: rgba(226, 0, 26, 0.2);
     color: #ffffff;
+  }
+
+  .keyword-summary {
+    background: rgba(30, 41, 59, 0.65);
+    border-color: rgba(148, 163, 184, 0.35);
+  }
+
+  .keyword-summary h3 {
+    color: #e2e8f0;
+  }
+
+  .keyword-summary-list li {
+    background: rgba(226, 0, 26, 0.25);
+    color: #f8fafc;
+  }
+
+  .keyword-summary-empty,
+  .keyword-summary-hint {
+    color: #94a3b8;
   }
 
   .inner-container,
@@ -1187,6 +1283,15 @@ textarea:focus {
     background: rgba(15, 23, 42, 0.9);
     color: #e2e8f0;
     box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.12);
+  }
+
+  .technology-keyword-editor {
+    border-color: rgba(148, 163, 184, 0.35);
+    background: rgba(15, 23, 42, 0.85);
+  }
+
+  .technology-feedback {
+    color: #34d399;
   }
 }
 .library-modal {

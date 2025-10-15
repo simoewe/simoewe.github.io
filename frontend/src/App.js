@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Header from "./components/Header";
 import RightPanel from "./components/PdfViewer";
-import KeywordInput from "./components/Input";
 import TextAnalyzer from "./components/TextAnalyzer";
 import { getApiBase } from "./utils/apiBase";
 import './App.css';
@@ -96,6 +95,15 @@ function App() {
     setAnalysisProgress(100);
     setAnalysisSteps((prev) => prev.map((step) => ({ ...step, status: 'completed' })));
   }, [clearAnalysisTimers]);
+
+  const handleKeywordsChange = useCallback((input) => {
+    if (typeof input === "string") {
+      setKeywords(input);
+      return;
+    }
+    const nextValue = input?.target?.value;
+    setKeywords(typeof nextValue === "string" ? nextValue : "");
+  }, []);
 
   const userKeywordList = useMemo(
     () =>
@@ -268,6 +276,8 @@ function App() {
           defaultTerms: DEFAULT_TECHNOLOGY_TERMS,
           customTerms: userKeywordList
         }}
+        keywordsValue={keywords}
+        onKeywordsChange={handleKeywordsChange}
       />
 
       <div className="body">
@@ -279,10 +289,23 @@ function App() {
                 <Panel defaultSize={20} minSize={15} maxSize={30}>
                   <div className="inner-container top" style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative', padding: '8px', overflowY: 'auto' }}>
                     <div style={{ flex: 1, minHeight: '80px', marginBottom: '16px', paddingRight: '2px' }}>
-                      <KeywordInput 
-                        value={keywords} 
-                        onChange={(e) => setKeywords(e.target.value)} 
-                      />
+                      <div className="keyword-summary">
+                        <h3>Custom keywords</h3>
+                        {userKeywordList.length > 0 ? (
+                          <ul className="keyword-summary-list">
+                            {userKeywordList.map((keyword) => (
+                              <li key={keyword}>{keyword}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="keyword-summary-empty">
+                            No custom keywords selected. Open the Technologies menu to add some.
+                          </p>
+                        )}
+                        <p className="keyword-summary-hint">
+                          Manage technology terms via the Technologies button in the navigation bar.
+                        </p>
+                      </div>
                     </div>
                     <div className="analyze-footer">
                       <button 
