@@ -202,13 +202,14 @@ html {
 }
 
 .keyword-layout {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(320px, 1fr);
   gap: 16px;
   width: 100%;
+  align-items: start;
 }
 
 .keyword-scrollable {
-  flex: 0 0 52%;
   max-height: 300px;
   overflow-y: auto;
   padding-right: 8px;
@@ -218,24 +219,22 @@ html {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  flex-shrink: 0;
-  margin-left: auto;
-  align-items: flex-end;
-  max-width: 100%;
+  margin-left: 0;
+  align-items: stretch;
+  justify-self: end;
+  width: 100%;
+  max-width: 760px;
 }
 
 .technology-action-row {
-  display: flex;
+  display: grid;
   gap: 12px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
   width: 100%;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 }
 
 .technology-action-row .technology-action-column {
-  flex: 1 1 200px;
-  min-width: 200px;
-  max-width: 240px;
+  width: 100%;
 }
 
 .technology-action-column {
@@ -262,17 +261,19 @@ html {
 
 @media (max-width: 960px) {
   .keyword-layout {
-    flex-direction: column;
+    grid-template-columns: 1fr;
     gap: 20px;
   }
 
   .keyword-action-stack {
     margin-left: 0;
     align-items: stretch;
+    justify-self: stretch;
+    max-width: none;
   }
 
   .technology-action-row {
-    justify-content: flex-start;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   }
 }
 
