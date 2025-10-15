@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Header from "./components/Header";
 import RightPanel from "./components/PdfViewer";
+import KeywordInput from "./components/Input";
 import TextAnalyzer from "./components/TextAnalyzer";
 import { getApiBase } from "./utils/apiBase";
 import './App.css';
@@ -41,6 +42,7 @@ function App() {
   const localPdfUrlRef = useRef(null);
   const progressIntervalRef = useRef(null);
   const stepTimeoutsRef = useRef([]);
+  const [technologyFeedback, setTechnologyFeedback] = useState("");
 
   const DEFAULT_ANALYSIS_STEPS = useMemo(() => ([
     { id: 'upload', label: 'Upload & validation' },
@@ -122,6 +124,7 @@ function App() {
           : "";
     const normalized = parseKeywordString(raw);
     setKeywords(formatKeywordString(normalized));
+    setTechnologyFeedback("");
   }, []);
 
   const userKeywordList = useMemo(() => parseKeywordString(keywords), [keywords]);
@@ -167,6 +170,86 @@ function App() {
       customTerms: customKeywordList,
     }),
     [activeEnglishDefaults, activeGermanDefaults, customKeywordList]
+  );
+
+  useEffect(() => {
+    if (!technologyFeedback) return;
+    const timer = setTimeout(() => setTechnologyFeedback(""), 4000);
+    return () => clearTimeout(timer);
+  }, [technologyFeedback]);
+
+  const modifyKeywords = useCallback((terms, label, mode) => {
+    if (!Array.isArray(terms) || terms.length === 0) {
+      setTechnologyFeedback(`No ${label.toLowerCase()} available.`);
+      return;
+    }
+
+    let feedbackMessage = "";
+    setKeywords((prev) => {
+      const current = parseKeywordString(prev);
+
+      if (mode === "add") {
+        const seen = new Set(current.map((term) => term.toLowerCase()));
+        const next = [...current];
+        let added = 0;
+        terms.forEach((term) => {
+          const trimmed = term.trim();
+          if (!trimmed) return;
+          const lowered = trimmed.toLowerCase();
+          if (seen.has(lowered)) return;
+          seen.add(lowered);
+          next.push(trimmed);
+          added += 1;
+        });
+
+        if (!added) {
+          feedbackMessage = `No ${label.toLowerCase()} left to add.`;
+          return prev;
+        }
+
+        feedbackMessage = `Added ${added} ${label.toLowerCase()}.`;
+        return formatKeywordString(next);
+      }
+
+      const removalSet = new Set(
+        terms.map((term) => term.trim().toLowerCase()).filter(Boolean)
+      );
+      if (!removalSet.size) {
+        feedbackMessage = `No ${label.toLowerCase()} available to remove.`;
+        return prev;
+      }
+
+      const next = current.filter((term) => !removalSet.has(term.toLowerCase()));
+      const removed = current.length - next.length;
+      if (!removed) {
+        feedbackMessage = `No ${label.toLowerCase()} found to remove.`;
+        return prev;
+      }
+
+      feedbackMessage = `Removed ${removed} ${label.toLowerCase()}.`;
+      return formatKeywordString(next);
+    });
+    setTechnologyFeedback(feedbackMessage);
+  }, []);
+
+  const handleAddGermanTerms = useCallback(
+    () => modifyKeywords(GERMAN_TECHNOLOGY_TERMS, "German terms", "add"),
+    [modifyKeywords]
+  );
+
+  const handleRemoveGermanTerms = useCallback(
+    () => modifyKeywords(GERMAN_TECHNOLOGY_TERMS, "German terms", "remove"),
+    [modifyKeywords]
+  );
+
+  const handleAddEnglishTerms = useCallback(
+    () => modifyKeywords(DEFAULT_TECHNOLOGY_TERMS, "English terms", "add"),
+    [modifyKeywords]
+  );
+
+  const handleRemoveEnglishTerms = useCallback(
+    () => modifyKeywords(DEFAULT_TECHNOLOGY_TERMS, "English terms", "remove"),
+    [modifyKeywords]
   );
 
   useEffect(() => {
@@ -327,9 +410,6 @@ function App() {
     <div className="app">
       <Header
         onPickFromLibrary={handleLibraryPick}
-        technologyTerms={technologyTerms}
-        keywordsValue={keywords}
-        onKeywordsChange={handleKeywordsChange}
       />
 
       <div className="body">
@@ -341,25 +421,104 @@ function App() {
                 <Panel defaultSize={20} minSize={15} maxSize={30}>
                   <div className="inner-container top" style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative', padding: '8px', overflowY: 'auto' }}>
                     <div style={{ flex: 1, minHeight: '80px', marginBottom: '16px', paddingRight: '2px' }}>
-                      <div className="analysis-term-card">
-                        <div className="analysis-term-header">
-                          <h3>All analysis terms</h3>
-                          <span className="analysis-term-count">Total: {userKeywordList.length}</span>
+                      <div className="technology-management">
+                        <section className="technology-keyword-editor">
+                          <div className="technology-editor-header">
+                            <h3>Keyword editor</h3>
+                            <span className="technology-editor-count">Total: {userKeywordList.length}</span>
+                          </div>
+                          <KeywordInput
+                            value={keywords}
+                            onChange={handleKeywordsChange}
+                          />
+                          <div className="technology-actions">
+                            <div className="technology-action-group">
+                              <span className="technology-action-label">English search terms</span>
+                              <div className="technology-action-buttons">
+                                <button type="button" onClick={handleAddEnglishTerms}>
+                                  Add
+                                </button>
+                                <button type="button" onClick={handleRemoveEnglishTerms}>
+                                  Remove
+                                </button>
+                              </div>
+                            </div>
+                            <div className="technology-action-group">
+                              <span className="technology-action-label">German search terms</span>
+                              <div className="technology-action-buttons">
+                                <button type="button" onClick={handleAddGermanTerms}>
+                                  Add
+                                </button>
+                                <button type="button" onClick={handleRemoveGermanTerms}>
+                                  Remove
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                          {technologyFeedback && (
+                            <p className="technology-feedback">{technologyFeedback}</p>
+                          )}
+                        </section>
+
+                        <div className="technology-overview">
+                          <section className="technology-overview-block">
+                            <h4>Active English terms</h4>
+                            {technologyTerms.englishDefaultTerms.length ? (
+                              <ul className="technology-list">
+                                {technologyTerms.englishDefaultTerms.map((term) => (
+                                  <li key={`english-${term}`}>{term}</li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <p className="technology-empty">No English defaults selected.</p>
+                            )}
+                          </section>
+                          <section className="technology-overview-block">
+                            <h4>Active German terms</h4>
+                            {technologyTerms.germanDefaultTerms.length ? (
+                              <ul className="technology-list">
+                                {technologyTerms.germanDefaultTerms.map((term) => (
+                                  <li key={`german-${term}`}>{term}</li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <p className="technology-empty">No German defaults selected.</p>
+                            )}
+                          </section>
+                          <section className="technology-overview-block">
+                            <h4>Custom keywords</h4>
+                            {technologyTerms.customTerms.length ? (
+                              <ul className="technology-list">
+                                {technologyTerms.customTerms.map((term) => (
+                                  <li key={`custom-${term}`}>{term}</li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <p className="technology-empty">No additional keywords added.</p>
+                            )}
+                          </section>
                         </div>
-                        {userKeywordList.length > 0 ? (
-                          <ul className="technology-list columns analysis-term-list">
-                            {userKeywordList.map((keyword) => (
-                              <li key={`analysis-${keyword}`}>{keyword}</li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <p className="analysis-term-empty">
-                            No analysis terms selected yet.
+
+                        <section className="analysis-term-card">
+                          <div className="analysis-term-header">
+                            <h3>All analysis terms</h3>
+                            <span className="analysis-term-count">Total: {userKeywordList.length}</span>
+                          </div>
+                          {userKeywordList.length > 0 ? (
+                            <ul className="technology-list columns analysis-term-list">
+                              {userKeywordList.map((keyword) => (
+                                <li key={`analysis-${keyword}`}>{keyword}</li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <p className="analysis-term-empty">
+                              No analysis terms selected yet.
+                            </p>
+                          )}
+                          <p className="analysis-term-hint">
+                            Manage analysis terms with the controls above.
                           </p>
-                        )}
-                        <p className="analysis-term-hint">
-                          Manage analysis terms via the Technologies menu.
-                        </p>
+                        </section>
                       </div>
                     </div>
                     <div className="analyze-footer">
