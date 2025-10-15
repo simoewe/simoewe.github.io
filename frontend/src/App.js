@@ -10,7 +10,11 @@ import {
   Panel,
   PanelResizeHandle
 } from 'react-resizable-panels';
-import { DEFAULT_TECHNOLOGY_TERMS, GERMAN_TECHNOLOGY_TERMS } from "./constants/technologies";
+import {
+  DEFAULT_TECHNOLOGY_TERMS,
+  GERMAN_TECHNOLOGY_TERMS,
+  SPECIALIZED_TECHNOLOGY_TERMS,
+} from "./constants/technologies";
 
 const parseKeywordString = (raw) => {
   if (!raw) return [];
@@ -129,40 +133,6 @@ function App() {
 
   const userKeywordList = useMemo(() => parseKeywordString(keywords), [keywords]);
 
-  const keywordSet = useMemo(
-    () => new Set(userKeywordList.map((term) => term.toLowerCase())),
-    [userKeywordList]
-  );
-
-  const englishDefaultSet = useMemo(
-    () => new Set(DEFAULT_TECHNOLOGY_TERMS.map((term) => term.toLowerCase())),
-    []
-  );
-
-  const germanDefaultSet = useMemo(
-    () => new Set(GERMAN_TECHNOLOGY_TERMS.map((term) => term.toLowerCase())),
-    []
-  );
-
-  const activeEnglishDefaults = useMemo(
-    () => DEFAULT_TECHNOLOGY_TERMS.filter((term) => keywordSet.has(term.toLowerCase())),
-    [keywordSet]
-  );
-
-  const activeGermanDefaults = useMemo(
-    () => GERMAN_TECHNOLOGY_TERMS.filter((term) => keywordSet.has(term.toLowerCase())),
-    [keywordSet]
-  );
-
-  const customKeywordList = useMemo(
-    () =>
-      userKeywordList.filter((term) => {
-        const lowered = term.toLowerCase();
-        return !englishDefaultSet.has(lowered) && !germanDefaultSet.has(lowered);
-      }),
-    [englishDefaultSet, germanDefaultSet, userKeywordList]
-  );
-
   useEffect(() => {
     if (!technologyFeedback) return;
     const timer = setTimeout(() => setTechnologyFeedback(""), 4000);
@@ -240,6 +210,16 @@ function App() {
 
   const handleRemoveEnglishTerms = useCallback(
     () => modifyKeywords(DEFAULT_TECHNOLOGY_TERMS, "English terms", "remove"),
+    [modifyKeywords]
+  );
+
+  const handleAddSpecializedTerms = useCallback(
+    () => modifyKeywords(SPECIALIZED_TECHNOLOGY_TERMS, "specialized technologies", "add"),
+    [modifyKeywords]
+  );
+
+  const handleRemoveSpecializedTerms = useCallback(
+    () => modifyKeywords(SPECIALIZED_TECHNOLOGY_TERMS, "specialized technologies", "remove"),
     [modifyKeywords]
   );
 
@@ -447,6 +427,17 @@ function App() {
                                 Add
                               </button>
                               <button type="button" onClick={handleRemoveGermanTerms}>
+                                Remove
+                              </button>
+                            </div>
+                          </div>
+                          <div className="technology-action-group">
+                            <span className="technology-action-label">Specialized technologies</span>
+                            <div className="technology-action-buttons">
+                              <button type="button" onClick={handleAddSpecializedTerms}>
+                                Add
+                              </button>
+                              <button type="button" onClick={handleRemoveSpecializedTerms}>
                                 Remove
                               </button>
                             </div>

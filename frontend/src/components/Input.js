@@ -16,9 +16,11 @@ const KeywordInput = ({ value, onChange }) => {
 
   // Initialize keywords from parent value
   useEffect(() => {
-    if (value && typeof value === 'string') {
+    if (typeof value === 'string') {
       const keywordArray = value.split(',').map(k => k.trim()).filter(k => k);
       setKeywords(keywordArray);
+    } else if (!value) {
+      setKeywords([]);
     }
   }, [value]);
 
