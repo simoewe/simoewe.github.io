@@ -7,8 +7,7 @@ import { getApiBase } from "./utils/apiBase";
 import './App.css';
 import {
   PanelGroup,
-  Panel,
-  PanelResizeHandle
+  Panel
 } from 'react-resizable-panels';
 import {
   DEFAULT_TECHNOLOGY_TERMS,
@@ -47,6 +46,7 @@ function App() {
   const progressIntervalRef = useRef(null);
   const stepTimeoutsRef = useRef([]);
   const [technologyFeedback, setTechnologyFeedback] = useState("");
+  const [showKeywordModal, setShowKeywordModal] = useState(false);
 
   const DEFAULT_ANALYSIS_STEPS = useMemo(() => ([
     { id: 'upload', label: 'Upload & validation' },
@@ -138,6 +138,9 @@ function App() {
     const timer = setTimeout(() => setTechnologyFeedback(""), 4000);
     return () => clearTimeout(timer);
   }, [technologyFeedback]);
+
+  const openKeywordModal = useCallback(() => setShowKeywordModal(true), []);
+  const closeKeywordModal = useCallback(() => setShowKeywordModal(false), []);
 
   const modifyKeywords = useCallback((terms, label, mode) => {
     if (!Array.isArray(terms) || terms.length === 0) {
@@ -381,93 +384,126 @@ function App() {
     <div className="app">
       <Header
         onPickFromLibrary={handleLibraryPick}
+        onOpenKeywords={openKeywordModal}
       />
+
+      {showKeywordModal && (
+        <div
+          className="modal-backdrop"
+          role="presentation"
+          onClick={closeKeywordModal}
+        >
+          <div
+            className="modal-card keyword-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="keyword-modal-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="modal-header keyword-modal-header">
+              <div>
+                <h2 id="keyword-modal-title">Keywords</h2>
+                <p className="keyword-modal-subtitle">
+                  Manage the search terms that steer the document analysis.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="modal-close"
+                onClick={closeKeywordModal}
+                aria-label="Close keyword manager"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="keyword-modal-body">
+              <div className="keyword-modal-grid">
+                <section className="keyword-modal-editor">
+                  <KeywordInput
+                    value={keywords}
+                    onChange={handleKeywordsChange}
+                  />
+                  {technologyFeedback && (
+                    <p className="technology-feedback">{technologyFeedback}</p>
+                  )}
+                </section>
+
+                <aside className="keyword-modal-actions">
+                  <h3 className="keyword-modal-actions-title">Quick actions</h3>
+                  <p className="keyword-modal-actions-hint">
+                    Add curated keyword sets to jump-start your analysis.
+                  </p>
+                  <div className="technology-action-row">
+                    <div className="technology-action-column">
+                      <span className="technology-action-label">English search terms</span>
+                      <button type="button" onClick={handleAddEnglishTerms}>
+                        Add
+                      </button>
+                      <button type="button" onClick={handleRemoveEnglishTerms}>
+                        Remove
+                      </button>
+                    </div>
+                    <div className="technology-action-column">
+                      <span className="technology-action-label">German search terms</span>
+                      <button type="button" onClick={handleAddGermanTerms}>
+                        Add
+                      </button>
+                      <button type="button" onClick={handleRemoveGermanTerms}>
+                        Remove
+                      </button>
+                    </div>
+                    <div className="technology-action-column">
+                      <span className="technology-action-label">Specialized technologies</span>
+                      <button type="button" onClick={handleAddSpecializedTerms}>
+                        Add
+                      </button>
+                      <button type="button" onClick={handleRemoveSpecializedTerms}>
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                </aside>
+              </div>
+
+              {error && <div className="keyword-error">{error}</div>}
+            </div>
+
+            <div className="keyword-modal-footer">
+              <div className="keyword-modal-summary">
+                <span>
+                  {userKeywordList.length} keyword
+                  {userKeywordList.length === 1 ? "" : "s"} selected
+                </span>
+              </div>
+              <button
+                className="analyze-button"
+                onClick={handleSearch}
+                disabled={loading || libraryLoading}
+              >
+                {libraryLoading ? "Loading document..." : loading ? "Analyzing..." : "Analyze"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="body">
         <PanelGroup direction="horizontal" autoSaveId="layout">
-          {/* Left panel with vertical splitter */}
           <Panel defaultSize={50} minSize={10}>
             <div className="pane-content" style={{ height: '100%' }}>
-              <PanelGroup direction="vertical" autoSaveId="layout-vertical">
-                <Panel defaultSize={20} minSize={15} maxSize={30}>
-                  <div className="inner-container top keyword-panel">
-                    <div className="keyword-panel-content">
-                      <div className="keyword-layout">
-                        <section className="technology-keyword-editor keyword-scrollable">
-                          <div className="technology-editor-header">
-                            <h3>Keywords</h3>
-                            <span className="technology-editor-count">
-                              Total: {userKeywordList.length}
-                            </span>
-                          </div>
-                          <KeywordInput
-                            value={keywords}
-                            onChange={handleKeywordsChange}
-                          />
-                          {technologyFeedback && (
-                            <p className="technology-feedback">{technologyFeedback}</p>
-                          )}
-                          {error && <div className="keyword-error">{error}</div>}
-                        </section>
-
-                        <aside className="keyword-action-stack">
-                          <div className="technology-action-row">
-                            <div className="technology-action-column">
-                              <span className="technology-action-label">English search terms</span>
-                              <button type="button" onClick={handleAddEnglishTerms}>
-                                Add
-                              </button>
-                              <button type="button" onClick={handleRemoveEnglishTerms}>
-                                Remove
-                              </button>
-                            </div>
-                            <div className="technology-action-column">
-                              <span className="technology-action-label">German search terms</span>
-                              <button type="button" onClick={handleAddGermanTerms}>
-                                Add
-                              </button>
-                              <button type="button" onClick={handleRemoveGermanTerms}>
-                                Remove
-                              </button>
-                            </div>
-                            <div className="technology-action-column">
-                              <span className="technology-action-label">Specialized technologies</span>
-                              <button type="button" onClick={handleAddSpecializedTerms}>
-                                Add
-                              </button>
-                              <button type="button" onClick={handleRemoveSpecializedTerms}>
-                                Remove
-                              </button>
-                            </div>
-                          </div>
-                          <button
-                            className="analyze-button"
-                            onClick={handleSearch}
-                            disabled={loading || libraryLoading}
-                          >
-                            {libraryLoading ? "Loading document..." : loading ? "Analyzing..." : "Analyze"}
-                          </button>
-                        </aside>
-                      </div>
-                    </div>
-                  </div>
-                </Panel>
-                <PanelResizeHandle className="custom-handle-vertical" />
-                <Panel defaultSize={80} minSize={70}>
-                  <div className="inner-container bottom analysis-panel">
-                    <div className="analysis-panel-content">
-                      <TextAnalyzer
-                        analysisResult={analysisResult}
-                        loading={loading}
-                        analysisProgress={analysisProgress}
-                        analysisSteps={analysisSteps}
-                        customKeywords={submittedKeywords}
-                        onNavigateToPdf={navigateToPdfLocation}
-                      />
-                    </div>
-                  </div>
-                </Panel>
-              </PanelGroup>
+              <div className="inner-container full analysis-panel">
+                <div className="analysis-panel-content">
+                  <TextAnalyzer
+                    analysisResult={analysisResult}
+                    loading={loading}
+                    analysisProgress={analysisProgress}
+                    analysisSteps={analysisSteps}
+                    customKeywords={submittedKeywords}
+                    onNavigateToPdf={navigateToPdfLocation}
+                  />
+                </div>
+              </div>
             </div>
           </Panel>
           {/* Right panel */}

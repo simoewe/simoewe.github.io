@@ -5,6 +5,7 @@ import { getApiBase } from "../utils/apiBase";
 
 export default function Header({
   onPickFromLibrary,
+  onOpenKeywords,
 }) {
   const [showLib, setShowLib] = useState(false);
   const [showImpressum, setShowImpressum] = useState(false);
@@ -102,7 +103,14 @@ export default function Header({
         </div>
 
         <ul className="nav-rechts">
-          <li>Option</li>
+          <li>
+            <button
+              type="button"
+              onClick={() => onOpenKeywords && onOpenKeywords()}
+            >
+              Keywords
+            </button>
+          </li>
           <li>
             <button onClick={handleLibraryClick}>Library</button>
           </li>
