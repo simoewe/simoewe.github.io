@@ -201,30 +201,53 @@
 
 @media (prefers-color-scheme: dark) {
   .keyword-input-container {
+    background: #0f172a;
+    border-color: #1f2937;
+    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.65);
     color: #e2e8f0;
   }
 
   .input-header label {
-    color: #f8fafc;
+    color: #f1f5f9;
   }
 
   .clear-all-btn {
-    color: #f87171;
+    border-color: rgba(248, 113, 113, 0.6);
+    color: #fecaca;
   }
 
   .clear-all-btn:hover {
-    background: rgba(248, 113, 113, 0.1);
-    color: #fca5a5;
+    background: rgba(248, 113, 113, 0.18);
+    box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.22);
   }
 
   .keyword-tags {
-    background: #1f2937;
     border-color: #334155;
-    box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.2);
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.8));
+  }
+
+  .keyword-tags:focus-within {
+    border-color: #38bdf8;
+    box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.22);
+    background: rgba(15, 23, 42, 0.95);
+  }
+
+  .keyword-tag {
+    background: linear-gradient(135deg, #1e3a8a, #312e81);
+    color: #e0e7ff;
+    box-shadow: 0 10px 18px rgba(30, 64, 175, 0.45);
+  }
+
+  .remove-keyword {
+    background: rgba(226, 232, 240, 0.16);
+  }
+
+  .remove-keyword:hover {
+    background: rgba(226, 232, 240, 0.28);
   }
 
   .keyword-input-field {
-    color: #f8fafc;
+    color: #e2e8f0;
   }
 
   .keyword-input-field::placeholder {
@@ -232,24 +255,30 @@
   }
 
   .suggestions-dropdown {
-    background: #1f2937;
-    border-color: #e2001a;
-    box-shadow: 0 12px 32px rgba(8, 11, 19, 0.6);
+    background: #0f172a;
+    border-color: #1e293b;
+    box-shadow: 0 24px 40px rgba(15, 23, 42, 0.55);
   }
 
   .suggestion-item {
-    background: transparent;
     color: #e2e8f0;
-    border-bottom: 1px solid #334155;
+  }
+
+  .suggestion-item + .suggestion-item {
+    border-top-color: #1f2937;
   }
 
   .suggestion-item:hover {
-    background: rgba(226, 0, 26, 0.2);
-    color: #ffffff;
+    background: rgba(37, 99, 235, 0.28);
+    color: #bfdbfe;
+  }
+
+  .suggestion-icon {
+    opacity: 0.8;
   }
 
   .input-footer {
-    color: #cbd5f5;
+    color: #94a3b8;
   }
 
   .keyword-count {
@@ -257,10 +286,10 @@
   }
 
   .input-hint {
-    color: #94a3b8;
-    opacity: 1;
+    color: #cbd5f5;
   }
 }
+
 /* Scrollbar Styling */
 .suggestions-dropdown::-webkit-scrollbar {
   width: 6px;

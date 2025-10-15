@@ -468,7 +468,6 @@ function App() {
 
               {error && <div className="keyword-error">{error}</div>}
             </div>
-
             <div className="keyword-modal-footer">
               <div className="keyword-modal-summary">
                 <span>
@@ -476,13 +475,6 @@ function App() {
                   {userKeywordList.length === 1 ? "" : "s"} selected
                 </span>
               </div>
-              <button
-                className="analyze-button"
-                onClick={handleSearch}
-                disabled={loading || libraryLoading}
-              >
-                {libraryLoading ? "Loading document..." : loading ? "Analyzing..." : "Analyze"}
-              </button>
             </div>
           </div>
         </div>
@@ -494,6 +486,38 @@ function App() {
             <div className="pane-content" style={{ height: '100%' }}>
               <div className="inner-container full analysis-panel">
                 <div className="analysis-panel-content">
+                  <div className="analysis-toolbar">
+                    <div className="analysis-toolbar-copy">
+                      <h2>Analysis overview</h2>
+                      <p>
+                        {userKeywordList.length} keyword
+                        {userKeywordList.length === 1 ? "" : "s"} active • Manage your focus terms via the Keywords panel.
+                      </p>
+                    </div>
+                    <div className="analysis-toolbar-actions">
+                      <button
+                        type="button"
+                        className="analysis-keyword-button"
+                        onClick={openKeywordModal}
+                      >
+                        Manage keywords
+                      </button>
+                      <button
+                        className="analyze-button"
+                        onClick={handleSearch}
+                        disabled={loading || libraryLoading}
+                      >
+                        {libraryLoading ? "Loading document..." : loading ? "Analyzing..." : "Analyze"}
+                      </button>
+                    </div>
+                  </div>
+
+                  {error && (
+                    <div className="analysis-error">
+                      {error}
+                    </div>
+                  )}
+
                   <TextAnalyzer
                     analysisResult={analysisResult}
                     loading={loading}
