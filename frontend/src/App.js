@@ -430,15 +430,15 @@ function App() {
                                 Remove
                               </button>
                             </div>
-                          </div>
-                          <div className="technology-action-column">
-                            <span className="technology-action-label">Specialized technologies</span>
-                            <button type="button" onClick={handleAddSpecializedTerms}>
-                              Add
-                            </button>
-                            <button type="button" onClick={handleRemoveSpecializedTerms}>
-                              Remove
-                            </button>
+                            <div className="technology-action-column">
+                              <span className="technology-action-label">Specialized technologies</span>
+                              <button type="button" onClick={handleAddSpecializedTerms}>
+                                Add
+                              </button>
+                              <button type="button" onClick={handleRemoveSpecializedTerms}>
+                                Remove
+                              </button>
+                            </div>
                           </div>
                           <button
                             className="analyze-button"

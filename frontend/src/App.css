@@ -208,8 +208,8 @@ html {
 }
 
 .keyword-scrollable {
-  flex: 1;
-  max-height: 320px;
+  flex: 0 0 52%;
+  max-height: 300px;
   overflow-y: auto;
   padding-right: 8px;
 }
@@ -218,17 +218,18 @@ html {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  width: min(260px, 38%);
+  width: min(320px, 42%);
   flex-shrink: 0;
 }
 
 .technology-action-row {
   display: flex;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .technology-action-row .technology-action-column {
-  flex: 1;
+  flex: 1 1 140px;
 }
 
 .technology-action-column {
