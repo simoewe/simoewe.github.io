@@ -218,18 +218,21 @@ html {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  width: min(320px, 42%);
   flex-shrink: 0;
+  margin-left: auto;
+  align-items: flex-end;
 }
 
 .technology-action-row {
   display: flex;
   gap: 12px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  width: 100%;
 }
 
 .technology-action-row .technology-action-column {
-  flex: 1 1 140px;
+  flex: 0 0 200px;
 }
 
 .technology-action-column {
@@ -250,6 +253,8 @@ html {
   height: 52px;
   font-size: 17px;
   font-weight: 600;
+  width: 100%;
+  align-self: stretch;
 }
 
 .keyword-error {
