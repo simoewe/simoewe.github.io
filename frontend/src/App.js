@@ -769,7 +769,6 @@ function App() {
                               customKeywords={submittedKeywords}
                               onNavigateToPdf={navigateToPdfLocation}
                               documentId={documentIdentifier}
-                              title={doc.name}
                             />
                             {doc.status === "error" && doc.analysisError && (
                               <div className="analysis-card-error">

@@ -728,16 +728,16 @@ textarea:focus {
     color: #9ca3af;
   }
 
-  .viewer-tab-indicator.viewer-status-success {
+  .viewer-tab-remove.viewer-status-success {
     background: #34d399;
   }
 
-  .viewer-tab-indicator.viewer-status-loading,
-  .viewer-tab-indicator.viewer-status-error {
+  .viewer-tab-remove.viewer-status-loading,
+  .viewer-tab-remove.viewer-status-error {
     background: #f87171;
   }
 
-  .viewer-tab-indicator.viewer-status-idle {
+  .viewer-tab-remove.viewer-status-idle {
     background: #6b7280;
   }
  
@@ -2195,11 +2195,42 @@ textarea:focus {
   text-align: left;
 }
 
-.viewer-tab-indicator {
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
+.viewer-tab-remove {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
   background: #9ca3af;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.viewer-tab-remove:hover {
+  transform: scale(1.08);
+}
+
+.viewer-tab-remove:active {
+  transform: scale(0.95);
+}
+
+.viewer-tab-remove.viewer-status-success {
+  background: #34d399;
+}
+
+.viewer-tab-remove.viewer-status-loading,
+.viewer-tab-remove.viewer-status-error {
+  background: #f87171;
+}
+
+.viewer-tab-remove.viewer-status-idle {
+  background: #6b7280;
 }
 
 .viewer-body {
@@ -2337,25 +2368,25 @@ textarea:focus {
 }
 
 .viewer-status-loading,
-.viewer-tab-indicator.viewer-status-loading {
+.viewer-tab-remove.viewer-status-loading {
   background: #fee2e2;
   color: #b91c1c;
 }
 
 .viewer-status-success,
-.viewer-tab-indicator.viewer-status-success {
+.viewer-tab-remove.viewer-status-success {
   background: #dcfce7;
   color: #047857;
 }
 
 .viewer-status-error,
-.viewer-tab-indicator.viewer-status-error {
+.viewer-tab-remove.viewer-status-error {
   background: #fee2e2;
   color: #b91c1c;
 }
 
 .viewer-status-idle,
-.viewer-tab-indicator.viewer-status-idle {
+.viewer-tab-remove.viewer-status-idle {
   background: #e5e7eb;
   color: #6b7280;
 }

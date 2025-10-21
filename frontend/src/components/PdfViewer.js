@@ -108,6 +108,17 @@ function RightPanel({
     onSelectDocument?.(docId);
   };
 
+  const handleRemoveDocumentTab = (event, docId) => {
+    event.stopPropagation();
+    event.preventDefault();
+    if (typeof onRemoveDocument === "function") {
+      onRemoveDocument(docId);
+    }
+    if (activeTab === docId) {
+      setActiveTab("upload");
+    }
+  };
+
   const renderUploadArea = () => (
     <div
       {...getRootProps({
@@ -247,9 +258,13 @@ function RightPanel({
           >
             <span className="viewer-tab-label">{doc.name}</span>
             <span
-              className={`viewer-tab-indicator viewer-status-${doc.status || "idle"}`}
+              className={`viewer-tab-remove viewer-status-${doc.status || "idle"}`}
+              title="Remove document"
               aria-hidden="true"
-            ></span>
+              onClick={(event) => handleRemoveDocumentTab(event, doc.id)}
+            >
+              ×
+            </span>
           </button>
         ))}
       </div>
