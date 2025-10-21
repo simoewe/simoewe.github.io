@@ -16,6 +16,8 @@ const TextAnalyzer = ({
   analysisSteps = [],
   customKeywords = [],
   onNavigateToPdf,
+  documentId,
+  title = 'Analysis Results',
 }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [expandedSections, setExpandedSections] = useState({
@@ -125,7 +127,7 @@ const TextAnalyzer = ({
     return (
       <div className="text-analyzer">
         <div className="analyzer-header">
-          <h2>Analysis Results</h2>
+          <h2>{title}</h2>
         </div>
         <div className="loading-container">
           <div className="loading-spinner"></div>
@@ -155,7 +157,7 @@ const TextAnalyzer = ({
     return (
       <div className="text-analyzer">
         <div className="analyzer-header">
-          <h2>Analysis Results</h2>
+          <h2>{title}</h2>
         </div>
         <div className="empty-state">
           <div className="empty-icon">📄</div>
@@ -169,7 +171,7 @@ const TextAnalyzer = ({
     return (
       <div className="text-analyzer">
         <div className="analyzer-header">
-          <h2>Analysis Results</h2>
+          <h2>{title}</h2>
         </div>
         <div className="error-state">
           <div className="error-icon">⚠️</div>
@@ -213,7 +215,7 @@ const TextAnalyzer = ({
   return (
     <div className="text-analyzer">
       <div className="analyzer-header">
-        <h2>Analysis Results</h2>
+        <h2>{title}</h2>
         <div className="tab-navigation">
           {tabs.map(tab => (
             <button
@@ -430,7 +432,11 @@ const TextAnalyzer = ({
                             const pageLabel = normalized.page ? `Page ${normalized.page}` : null;
                             const handleViewerJump = () => {
                               if (typeof onNavigateToPdf === 'function') {
-                                onNavigateToPdf(normalized.page, normalized.matchText || keyword);
+                                onNavigateToPdf(
+                                  documentId,
+                                  normalized.page,
+                                  normalized.matchText || keyword
+                                );
                               }
                             };
                             return (

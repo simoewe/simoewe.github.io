@@ -34,17 +34,14 @@ const formatKeywordString = (list) => list.join(', ');
 
 function App() {
   const [keywords, setKeywords] = useState(() => formatKeywordString(DEFAULT_TECHNOLOGY_TERMS));
-  const [file, setFile] = useState(null);
-  const [analysisResult, setAnalysisResult] = useState(null);
   const [submittedKeywords, setSubmittedKeywords] = useState([]);
   const [loading, setLoading] = useState(false);
   const [libraryLoading, setLibraryLoading] = useState(false);
   const [error, setError] = useState("");
-  const [pdfUrl, setPdfUrl] = useState(null);
-  const [pdfViewerSrc, setPdfViewerSrc] = useState(null);
-  const localPdfUrlRef = useRef(null);
-  const progressIntervalRef = useRef(null);
-  const stepTimeoutsRef = useRef([]);
+  const [documents, setDocuments] = useState([]);
+  const [activeDocumentId, setActiveDocumentId] = useState(null);
+  const objectUrlMapRef = useRef(new Map());
+  const analysisTimersRef = useRef(new Map());
   const [technologyFeedback, setTechnologyFeedback] = useState("");
   const [showKeywordModal, setShowKeywordModal] = useState(false);
 
@@ -54,51 +51,66 @@ function App() {
     { id: 'analyze', label: 'Trend analysis' },
     { id: 'finalize', label: 'Result preparation' }
   ]), []);
-  const [analysisSteps, setAnalysisSteps] = useState(() =>
+
+  const createInitialSteps = useCallback(() => (
     DEFAULT_ANALYSIS_STEPS.map((step) => ({ ...step, status: 'pending' }))
-  );
-  const [analysisProgress, setAnalysisProgress] = useState(0);
+  ), [DEFAULT_ANALYSIS_STEPS]);
 
-  const clearAnalysisTimers = useCallback(() => {
-    if (progressIntervalRef.current) {
-      clearInterval(progressIntervalRef.current);
-      progressIntervalRef.current = null;
-    }
-    if (stepTimeoutsRef.current.length) {
-      stepTimeoutsRef.current.forEach((timeoutId) => clearTimeout(timeoutId));
-      stepTimeoutsRef.current = [];
-    }
-  }, []);
-
-  const advanceStep = useCallback((completedId, nextId) => {
-    setAnalysisSteps((prev) =>
-      prev.map((step) => {
-        if (step.id === completedId) {
-          return { ...step, status: 'completed' };
+  const updateDocument = useCallback((docId, updater) => {
+    setDocuments((prev) =>
+      prev.map((doc) => {
+        if (doc.id !== docId) {
+          return doc;
         }
-        if (nextId && step.id === nextId && step.status !== 'completed') {
-          return { ...step, status: 'active' };
+        const patch =
+          typeof updater === "function"
+            ? updater(doc) || {}
+            : updater || {};
+        if (!patch || Object.keys(patch).length === 0) {
+          return doc;
         }
-        return step;
+        return { ...doc, ...patch };
       })
     );
   }, []);
 
-  const startAnalysisIndicators = useCallback(() => {
-    clearAnalysisTimers();
-    setAnalysisProgress(5);
-    setAnalysisSteps(
-      DEFAULT_ANALYSIS_STEPS.map((step, index) => ({
-        ...step,
-        status: index === 0 ? 'active' : 'pending'
-      }))
-    );
+  const clearDocumentAnalysisTimers = useCallback((docId) => {
+    const timers = analysisTimersRef.current.get(docId);
+    if (!timers) {
+      return;
+    }
+    if (timers.interval) {
+      clearInterval(timers.interval);
+    }
+    if (timers.timeouts && timers.timeouts.length) {
+      timers.timeouts.forEach((timeoutId) => clearTimeout(timeoutId));
+    }
+    analysisTimersRef.current.delete(docId);
+  }, []);
 
-    progressIntervalRef.current = setInterval(() => {
-      setAnalysisProgress((prev) => {
-        if (prev >= 90) return prev;
-        const increment = Math.random() * 5 + 1;
-        return Math.min(prev + increment, 90);
+  const clearAllDocumentTimers = useCallback(() => {
+    analysisTimersRef.current.forEach((_, docId) => {
+      clearDocumentAnalysisTimers(docId);
+    });
+  }, [clearDocumentAnalysisTimers]);
+
+  const startDocumentAnalysisIndicators = useCallback((docId) => {
+    clearDocumentAnalysisTimers(docId);
+    updateDocument(docId, (doc) => ({
+      analysisProgress: 5,
+      analysisSteps: DEFAULT_ANALYSIS_STEPS.map((step, index) => ({
+        ...step,
+        status: index === 0 ? "active" : "pending",
+      })),
+    }));
+
+    const intervalId = setInterval(() => {
+      updateDocument(docId, (doc) => {
+        const nextProgress = Math.min((doc.analysisProgress || 0) + Math.random() * 5 + 1, 90);
+        if (nextProgress === doc.analysisProgress) {
+          return null;
+        }
+        return { analysisProgress: nextProgress };
       });
     }, 800);
 
@@ -108,16 +120,39 @@ function App() {
       { delay: 6200, complete: 'analyze', next: 'finalize' }
     ];
 
-    stepTimeoutsRef.current = schedule.map(({ delay, complete, next }) =>
-      setTimeout(() => advanceStep(complete, next), delay)
+    const timeouts = schedule.map(({ delay, complete, next }) =>
+      setTimeout(() => {
+        updateDocument(docId, (doc) => {
+          const steps = (doc.analysisSteps || []).map((step) => {
+            if (step.id === complete) {
+              return { ...step, status: "completed" };
+            }
+            if (next && step.id === next && step.status !== "completed") {
+              return { ...step, status: "active" };
+            }
+            return step;
+          });
+          return { analysisSteps: steps };
+        });
+      }, delay)
     );
-  }, [DEFAULT_ANALYSIS_STEPS, advanceStep, clearAnalysisTimers]);
 
-  const finishAnalysisIndicators = useCallback(() => {
-    clearAnalysisTimers();
-    setAnalysisProgress(100);
-    setAnalysisSteps((prev) => prev.map((step) => ({ ...step, status: 'completed' })));
-  }, [clearAnalysisTimers]);
+    analysisTimersRef.current.set(docId, {
+      interval: intervalId,
+      timeouts,
+    });
+  }, [DEFAULT_ANALYSIS_STEPS, clearDocumentAnalysisTimers, updateDocument]);
+
+  const finishDocumentAnalysisIndicators = useCallback((docId) => {
+    clearDocumentAnalysisTimers(docId);
+    updateDocument(docId, (doc) => ({
+      analysisProgress: 100,
+      analysisSteps: (doc.analysisSteps || createInitialSteps()).map((step) => ({
+        ...step,
+        status: "completed",
+      })),
+    }));
+  }, [clearDocumentAnalysisTimers, createInitialSteps, updateDocument]);
 
   const handleKeywordsChange = useCallback((input) => {
     const raw =
@@ -228,45 +263,81 @@ function App() {
 
   useEffect(() => {
     return () => {
-      if (localPdfUrlRef.current) {
-        URL.revokeObjectURL(localPdfUrlRef.current);
-        localPdfUrlRef.current = null;
-      }
-      clearAnalysisTimers();
+      clearAllDocumentTimers();
+      objectUrlMapRef.current.forEach((url) => {
+        URL.revokeObjectURL(url);
+      });
+      objectUrlMapRef.current.clear();
     };
-  }, [clearAnalysisTimers]);
+  }, [clearAllDocumentTimers]);
+  const generateDocumentId = useCallback(
+    () => `doc-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    []
+  );
 
-  // File is set from right panel
-  const handleFileUpload = (uploadedFile) => {
-    if (localPdfUrlRef.current) {
-      URL.revokeObjectURL(localPdfUrlRef.current);
-      localPdfUrlRef.current = null;
-    }
-
-    if (!uploadedFile) {
-      setFile(null);
-      setPdfUrl(null);
-      setPdfViewerSrc(null);
+  const handleFilesUpload = useCallback((incomingFiles = []) => {
+    const files = Array.from(incomingFiles).filter((file) => file && file.name);
+    if (!files.length) {
       return;
     }
 
-    const objectUrl = URL.createObjectURL(uploadedFile);
-    localPdfUrlRef.current = objectUrl;
+    const newDocs = files.map((file) => {
+      const id = generateDocumentId();
+      const objectUrl = URL.createObjectURL(file);
+      objectUrlMapRef.current.set(id, objectUrl);
+      return {
+        id,
+        name: file.name || "document.pdf",
+        file,
+        sourceType: "local",
+        baseViewerUrl: objectUrl,
+        viewerSrc: objectUrl,
+        downloadUrl: objectUrl,
+        objectUrl,
+        status: "idle",
+        analysisResult: null,
+        analysisError: "",
+        analysisProgress: 0,
+        analysisSteps: createInitialSteps(),
+        backendDocumentId: null,
+      };
+    });
 
-    setPdfUrl(objectUrl);
-    setPdfViewerSrc(objectUrl);
-    setFile(uploadedFile);
-    setAnalysisResult(null);
+    setDocuments((prev) => [...prev, ...newDocs]);
+    setActiveDocumentId(newDocs[newDocs.length - 1].id);
     setError("");
-    setLibraryLoading(false);
-  };
+  }, [createInitialSteps, generateDocumentId]);
 
-  const handleLibraryPick = async (selection) => {
-    if (localPdfUrlRef.current) {
-      URL.revokeObjectURL(localPdfUrlRef.current);
-      localPdfUrlRef.current = null;
+  const handleRemoveDocument = useCallback((docId) => {
+    if (!docId) {
+      return;
     }
+    setDocuments((prev) => {
+      const next = prev.filter((doc) => doc.id !== docId);
+      const objectUrl = objectUrlMapRef.current.get(docId);
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+        objectUrlMapRef.current.delete(docId);
+      }
+      clearDocumentAnalysisTimers(docId);
+      setActiveDocumentId((prevActive) => {
+        if (prevActive && prevActive !== docId) {
+          return prevActive;
+        }
+        return next.length ? next[next.length - 1].id : null;
+      });
+      return next;
+    });
+  }, [clearDocumentAnalysisTimers]);
 
+  const handleDocumentSelection = useCallback((docId) => {
+    if (!docId) {
+      return;
+    }
+    setActiveDocumentId(docId);
+  }, []);
+
+  const handleLibraryPick = useCallback(async (selection) => {
     const item = typeof selection === "string" ? { url: selection } : selection;
     const url = item?.url;
 
@@ -276,10 +347,6 @@ function App() {
     }
 
     setLibraryLoading(true);
-    setPdfUrl(url);
-    setPdfViewerSrc(url);
-    setFile(null);
-    setAnalysisResult(null);
     setError("");
 
     try {
@@ -288,35 +355,61 @@ function App() {
         throw new Error(`Failed to fetch document (${response.status})`);
       }
       const blob = await response.blob();
-      const name = item?.name || item?.key?.split("/").pop() || "library-document.pdf";
+      const name =
+        item?.name || item?.key?.split("/").pop() || "library-document.pdf";
       const fileFromLibrary = new File([blob], name, {
-        type: blob.type || "application/pdf"
+        type: blob.type || "application/pdf",
       });
-      setFile(fileFromLibrary);
+
+      const id = generateDocumentId();
+      const libraryDoc = {
+        id,
+        name,
+        file: fileFromLibrary,
+        sourceType: "library",
+        baseViewerUrl: url,
+        viewerSrc: url,
+        downloadUrl: url,
+        objectUrl: null,
+        status: "idle",
+        analysisResult: null,
+        analysisError: "",
+        analysisProgress: 0,
+        analysisSteps: createInitialSteps(),
+        backendDocumentId: null,
+      };
+
+      setDocuments((prev) => [...prev, libraryDoc]);
+      setActiveDocumentId(id);
     } catch (fetchErr) {
       console.error("Failed to load library document", fetchErr);
       setError("Failed to load document from library. Please try again.");
-      setPdfUrl(null);
-      setPdfViewerSrc(null);
     } finally {
       setLibraryLoading(false);
     }
-  };
+  }, [createInitialSteps, generateDocumentId]);
 
-  const handleBackToUpload = () => {
-    if (localPdfUrlRef.current) {
-      URL.revokeObjectURL(localPdfUrlRef.current);
-      localPdfUrlRef.current = null;
-    }
-    setPdfUrl(null);
-    setPdfViewerSrc(null);
-  };
-
-  const navigateToPdfLocation = useCallback((page, term) => {
-    if (!pdfUrl) {
+  const navigateToPdfLocation = useCallback((docIdentifier, page, term) => {
+    if (!docIdentifier) {
       return null;
     }
-    const base = pdfUrl.split('#')[0];
+
+    const targetDoc = documents.find(
+      (doc) =>
+        doc.backendDocumentId === docIdentifier || doc.id === docIdentifier
+    );
+
+    if (!targetDoc) {
+      return null;
+    }
+
+    const base = (targetDoc.baseViewerUrl || targetDoc.viewerSrc || "").split(
+      "#"
+    )[0];
+    if (!base) {
+      return null;
+    }
+
     const params = [];
     if (page) {
       params.push(`page=${page}`);
@@ -324,61 +417,129 @@ function App() {
     if (term) {
       params.push(`search=${encodeURIComponent(term)}`);
     }
-    const hash = params.length ? `#${params.join('&')}` : '';
+    const hash = params.length ? `#${params.join("&")}` : "";
     const nextSrc = `${base}${hash}`;
-    setPdfViewerSrc((prev) => {
-      if (prev === nextSrc) {
-        const separator = nextSrc.includes('#') ? '&' : '#';
-        const reloadMarker = `${nextSrc}${separator}_tick=${Date.now()}`;
-        return reloadMarker;
-      }
-      return nextSrc;
-    });
-    return nextSrc;
-  }, [pdfUrl]);
 
-  const handleSearch = async () => {
+    updateDocument(targetDoc.id, (doc) => {
+      const previousSrc = doc.viewerSrc || base;
+      if (previousSrc === nextSrc) {
+        const separator = nextSrc.includes("#") ? "&" : "#";
+        return { viewerSrc: `${nextSrc}${separator}_tick=${Date.now()}` };
+      }
+      return { viewerSrc: nextSrc };
+    });
+
+    setActiveDocumentId(targetDoc.id);
+    return nextSrc;
+  }, [documents, updateDocument]);
+
+  const handleSearch = useCallback(async () => {
     if (libraryLoading) {
       setError("Document is still loading. Please wait a moment.");
       return;
     }
 
-    setLoading(true);
-    setError("");
-    setAnalysisResult(null);
-    setSubmittedKeywords(userKeywordList);
-    if (!file) {
-      setError("Please select a file to analyze.");
-      setLoading(false);
+    if (!documents.length) {
+      setError("Please add at least one PDF to analyze.");
       return;
     }
-    startAnalysisIndicators();
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("buzzwords", keywords);
-      const apiUrl = getApiBase();
-      console.log("API URL used for analyze:", apiUrl || "(same origin)"); // Debugging line
-      const res = await fetch(`${apiUrl ? `${apiUrl}/analyze` : "/analyze"}`, {
-        method: "POST",
-        body: formData,
-      });
-      const contentType = res.headers.get("content-type") || "";
-      if (!contentType.includes("application/json")) {
-        const text = await res.text();
-        throw new Error(text || `Unexpected response (${res.status})`);
-      }
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Analysis request failed.");
-      if (data.error) throw new Error(data.error);
-      setAnalysisResult(data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      finishAnalysisIndicators();
-      setLoading(false);
+
+    const docsReadyForAnalysis = documents.filter((doc) => doc.file);
+    if (!docsReadyForAnalysis.length) {
+      setError("No analyzable documents found. Upload PDFs again.");
+      return;
     }
-  };
+
+    setLoading(true);
+    setError("");
+    setSubmittedKeywords(userKeywordList);
+
+    docsReadyForAnalysis.forEach((doc) => {
+      updateDocument(doc.id, {
+        status: "loading",
+        analysisResult: null,
+        analysisError: "",
+        analysisProgress: 0,
+        analysisSteps: createInitialSteps(),
+      });
+      startDocumentAnalysisIndicators(doc.id);
+    });
+
+    const apiUrl = getApiBase();
+    const endpoint = apiUrl ? `${apiUrl}/analyze` : "/analyze";
+
+    const errors = [];
+
+    await Promise.all(
+      docsReadyForAnalysis.map(async (doc) => {
+        try {
+          const formData = new FormData();
+          formData.append("file", doc.file);
+          formData.append("buzzwords", keywords);
+
+          const res = await fetch(endpoint, {
+            method: "POST",
+            body: formData,
+          });
+
+          const contentType = res.headers.get("content-type") || "";
+          if (!contentType.includes("application/json")) {
+            const text = await res.text();
+            throw new Error(text || `Unexpected response (${res.status})`);
+          }
+          const data = await res.json();
+          if (!res.ok || data.error) {
+            throw new Error(data.error || "Analysis request failed.");
+          }
+
+          updateDocument(doc.id, {
+            status: "success",
+            analysisResult: data,
+            analysisError: "",
+            backendDocumentId: data.document_id || doc.backendDocumentId,
+          });
+        } catch (err) {
+          errors.push(`${doc.name}: ${err.message}`);
+          updateDocument(doc.id, {
+            status: "error",
+            analysisResult: null,
+            analysisError: err.message,
+          });
+        } finally {
+          finishDocumentAnalysisIndicators(doc.id);
+        }
+      })
+    );
+
+    if (errors.length) {
+      setError(
+        `Analysis failed for ${errors.length} document${errors.length === 1 ? "" : "s"}`
+      );
+    } else {
+      setError("");
+    }
+    setLoading(false);
+  }, [
+    createInitialSteps,
+    documents,
+    finishDocumentAnalysisIndicators,
+    keywords,
+    libraryLoading,
+    startDocumentAnalysisIndicators,
+    updateDocument,
+    userKeywordList,
+  ]);
+
+  const totalDocuments = documents.length;
+  const analyzingCount = documents.filter((doc) => doc.status === "loading").length;
+  const analyzeButtonDisabled = loading || libraryLoading || totalDocuments === 0;
+  const analyzeButtonLabel = libraryLoading
+    ? "Loading document..."
+    : loading
+      ? `Analyzing${totalDocuments > 1 ? ` (${analyzingCount}/${totalDocuments})` : "..."}`
+      : totalDocuments > 1
+        ? "Analyze all"
+        : "Analyze";
 
   return (
     <div className="app">
@@ -505,9 +666,10 @@ function App() {
                       <button
                         className="analyze-button"
                         onClick={handleSearch}
-                        disabled={loading || libraryLoading}
+                        disabled={analyzeButtonDisabled}
+                        title={totalDocuments === 0 ? "Add at least one PDF to run the analysis" : undefined}
                       >
-                        {libraryLoading ? "Loading document..." : loading ? "Analyzing..." : "Analyze"}
+                        {analyzeButtonLabel}
                       </button>
                     </div>
                   </div>
@@ -518,40 +680,99 @@ function App() {
                     </div>
                   )}
 
-                  <TextAnalyzer
-                    analysisResult={analysisResult}
-                    loading={loading}
-                    analysisProgress={analysisProgress}
-                    analysisSteps={analysisSteps}
-                    customKeywords={submittedKeywords}
-                    onNavigateToPdf={navigateToPdfLocation}
-                  />
+                  {totalDocuments === 0 ? (
+                    <TextAnalyzer
+                      analysisResult={null}
+                      loading={false}
+                      analysisProgress={0}
+                      analysisSteps={createInitialSteps()}
+                      customKeywords={submittedKeywords}
+                      onNavigateToPdf={navigateToPdfLocation}
+                    />
+                  ) : (
+                    <div className="analysis-multi-container">
+                      {documents.map((doc) => {
+                        const documentIdentifier = doc.backendDocumentId || doc.id;
+                        const effectiveResult =
+                          doc.status === "success"
+                            ? doc.analysisResult
+                            : doc.status === "error"
+                              ? { error: doc.analysisError }
+                              : doc.analysisResult;
+                        return (
+                          <div
+                            key={doc.id}
+                            className={`analysis-card${doc.id === activeDocumentId ? " analysis-card-active" : ""}`}
+                          >
+                            <div className="analysis-card-header">
+                              <div>
+                                <h3 className="analysis-card-title">{doc.name}</h3>
+                                <div className="analysis-card-meta">
+                                  <span className="analysis-card-badge">
+                                    {doc.sourceType === "library" ? "Library" : "Upload"}
+                                  </span>
+                                  {doc.status === "loading" && (
+                                    <span className="analysis-card-status analysis-card-status-loading">
+                                      Analyzing…
+                                    </span>
+                                  )}
+                                  {doc.status === "success" && (
+                                    <span className="analysis-card-status analysis-card-status-success">
+                                      Ready
+                                    </span>
+                                  )}
+                                  {doc.status === "error" && (
+                                    <span className="analysis-card-status analysis-card-status-error">
+                                      Failed
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="analysis-card-actions">
+                                <button
+                                  type="button"
+                                  onClick={() => handleDocumentSelection(doc.id)}
+                                  className="analysis-card-action"
+                                >
+                                  Focus viewer
+                                </button>
+                              </div>
+                            </div>
+                            <TextAnalyzer
+                              analysisResult={effectiveResult}
+                              loading={doc.status === "loading"}
+                              analysisProgress={doc.analysisProgress || 0}
+                              analysisSteps={doc.analysisSteps || []}
+                              customKeywords={submittedKeywords}
+                              onNavigateToPdf={navigateToPdfLocation}
+                              documentId={documentIdentifier}
+                              title={doc.name}
+                            />
+                            {doc.status === "error" && doc.analysisError && (
+                              <div className="analysis-card-error">
+                                {doc.analysisError}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           </Panel>
-          {/* Right panel */}
           <Panel defaultSize={50} minSize={10}>
             <div className="pane-content">
               <div className="inner-container full">
-                {pdfUrl ? (
-                  <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
-                      <button onClick={handleBackToUpload}>Back to upload view</button>
-                      <a href={pdfUrl} target="_blank" rel="noreferrer">
-                        Open in new tab
-                      </a>
-                    </div>
-                    <iframe
-                      title="pdf-viewer"
-                      src={pdfViewerSrc || pdfUrl}
-                      key={pdfViewerSrc || pdfUrl || 'pdf-viewer'}
-                      style={{ flex: 1, width: "100%", border: "none" }}
-                    />
-                  </div>
-                ) : (
-                  <RightPanel onFileUpload={handleFileUpload} />
-                )}
+                <RightPanel
+                  documents={documents}
+                  activeDocumentId={activeDocumentId}
+                  onFilesUpload={handleFilesUpload}
+                  onRemoveDocument={handleRemoveDocument}
+                  onSelectDocument={handleDocumentSelection}
+                  libraryLoading={libraryLoading}
+                />
               </div>
             </div>
           </Panel>
