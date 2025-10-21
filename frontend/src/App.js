@@ -338,11 +338,13 @@ function App() {
   }, []);
 
   const handleLibraryPick = useCallback(async (selection) => {
-    const item = typeof selection === "string" ? { url: selection } : selection;
-    const url = item?.url;
+    const rawSelections = Array.isArray(selection) ? selection : [selection];
+    const normalizedItems = rawSelections
+      .map((item) => (typeof item === "string" ? { url: item } : item))
+      .filter((item) => item && item.url);
 
-    if (!url) {
-      setError("Selected library item has no download URL.");
+    if (!normalizedItems.length) {
+      setError("No downloadable items were selected from the library.");
       return;
     }
 
@@ -350,40 +352,61 @@ function App() {
     setError("");
 
     try {
-      const response = await fetch(url, { mode: "cors" });
-      if (!response.ok) {
-        throw new Error(`Failed to fetch document (${response.status})`);
+      const createdDocs = [];
+      const failures = [];
+
+      for (const item of normalizedItems) {
+        const url = item.url;
+        try {
+          const response = await fetch(url, { mode: "cors" });
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+          const blob = await response.blob();
+          const name =
+            item?.name ||
+            item?.key?.split("/").pop() ||
+            url.split("/").pop() ||
+            "library-document.pdf";
+          const fileFromLibrary = new File([blob], name, {
+            type: blob.type || "application/pdf",
+          });
+
+          const id = generateDocumentId();
+          createdDocs.push({
+            id,
+            name,
+            file: fileFromLibrary,
+            sourceType: "library",
+            baseViewerUrl: url,
+            viewerSrc: url,
+            downloadUrl: url,
+            objectUrl: null,
+            status: "idle",
+            analysisResult: null,
+            analysisError: "",
+            analysisProgress: 0,
+            analysisSteps: createInitialSteps(),
+            backendDocumentId: null,
+          });
+        } catch (fetchErr) {
+          console.error("Failed to load library document", fetchErr);
+          failures.push(item?.name || item?.key || item?.url || "Unknown item");
+        }
       }
-      const blob = await response.blob();
-      const name =
-        item?.name || item?.key?.split("/").pop() || "library-document.pdf";
-      const fileFromLibrary = new File([blob], name, {
-        type: blob.type || "application/pdf",
-      });
 
-      const id = generateDocumentId();
-      const libraryDoc = {
-        id,
-        name,
-        file: fileFromLibrary,
-        sourceType: "library",
-        baseViewerUrl: url,
-        viewerSrc: url,
-        downloadUrl: url,
-        objectUrl: null,
-        status: "idle",
-        analysisResult: null,
-        analysisError: "",
-        analysisProgress: 0,
-        analysisSteps: createInitialSteps(),
-        backendDocumentId: null,
-      };
+      if (createdDocs.length) {
+        setDocuments((prev) => [...prev, ...createdDocs]);
+        setActiveDocumentId(createdDocs[createdDocs.length - 1].id);
+      }
 
-      setDocuments((prev) => [...prev, libraryDoc]);
-      setActiveDocumentId(id);
-    } catch (fetchErr) {
-      console.error("Failed to load library document", fetchErr);
-      setError("Failed to load document from library. Please try again.");
+      if (failures.length) {
+        setError(
+          `Failed to load ${failures.length} item${failures.length === 1 ? "" : "s"} from the library.`
+        );
+      } else {
+        setError("");
+      }
     } finally {
       setLibraryLoading(false);
     }

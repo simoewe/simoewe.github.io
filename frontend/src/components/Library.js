@@ -41,11 +41,21 @@ function buildTree(items) {
   return root;
 }
 
-export default function Library({ onSelect }) {
+function collectFolderFiles(folderNode) {
+  if (!folderNode) return [];
+  const files = [...(folderNode.files || [])];
+  (folderNode.children || []).forEach((child) => {
+    files.push(...collectFolderFiles(child));
+  });
+  return files;
+}
+
+export default function Library({ onSelect, onCancel }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
   const [expanded, setExpanded] = useState(() => new Set([ROOT_PATH]));
+  const [selectedMap, setSelectedMap] = useState(() => new Map());
 
   useEffect(() => {
     async function load() {
@@ -80,6 +90,10 @@ export default function Library({ onSelect }) {
     load();
   }, []);
 
+  useEffect(() => {
+    setSelectedMap(new Map());
+  }, [items]);
+
   const tree = useMemo(() => buildTree(items), [items]);
 
   const toggleFolder = (path) => {
@@ -94,25 +108,96 @@ export default function Library({ onSelect }) {
     });
   };
 
+  const toggleFileSelection = (file) => {
+    if (!file || !file.path) {
+      return;
+    }
+    setSelectedMap((prev) => {
+      const next = new Map(prev);
+      if (next.has(file.path)) {
+        next.delete(file.path);
+      } else {
+        next.set(file.path, file);
+      }
+      return next;
+    });
+  };
+
+  const toggleFolderSelection = (folderNode) => {
+    if (!folderNode) {
+      return;
+    }
+    const folderFiles = collectFolderFiles(folderNode);
+    if (!folderFiles.length) {
+      return;
+    }
+    setSelectedMap((prev) => {
+      const next = new Map(prev);
+      const allSelected = folderFiles.every((file) => next.has(file.path));
+      if (allSelected) {
+        folderFiles.forEach((file) => next.delete(file.path));
+      } else {
+        folderFiles.forEach((file) => {
+          if (file && file.path) {
+            next.set(file.path, file);
+          }
+        });
+      }
+      return next;
+    });
+  };
+
+  const selectedCount = selectedMap.size;
+  const confirmSelection = () => {
+    if (!selectedCount) {
+      return;
+    }
+    if (typeof onSelect === "function") {
+      onSelect(Array.from(selectedMap.values()));
+    }
+  };
+
   const renderFolder = (folder, depth = 0) => {
     const isRoot = folder.path === ROOT_PATH;
     const isExpanded = expanded.has(folder.path);
+    const folderFiles = collectFolderFiles(folder);
+    const allSelected =
+      folderFiles.length > 0 && folderFiles.every((file) => selectedMap.has(file.path));
+    const someSelected =
+      !allSelected && folderFiles.some((file) => selectedMap.has(file.path));
 
     return (
       <div key={`folder-${folder.path || "root"}`} className="library-tree-node">
         {!isRoot && (
-          <button
-            type="button"
-            className="library-tree-folder"
-            style={{ paddingLeft: `${depth * 16}px` }}
-            onClick={() => toggleFolder(folder.path)}
-          >
-            <span className="library-tree-icon">{isExpanded ? "📂" : "📁"}</span>
-            <span>{folder.name}</span>
-            <span className="library-tree-count">
-              {folder.children.length + folder.files.length}
-            </span>
-          </button>
+          <div className="library-folder-row" style={{ paddingLeft: `${depth * 16}px` }}>
+            <button
+              type="button"
+              className="library-tree-folder"
+              onClick={() => toggleFolder(folder.path)}
+            >
+              <span className="library-tree-icon">{isExpanded ? "📂" : "📁"}</span>
+              <span>{folder.name}</span>
+              <span className="library-tree-count">
+                {folder.children.length + folder.files.length}
+              </span>
+            </button>
+            {folderFiles.length > 0 && (
+              <label className="library-folder-select">
+                <input
+                  type="checkbox"
+                  className="library-checkbox"
+                  checked={allSelected}
+                  ref={(el) => {
+                    if (el) {
+                      el.indeterminate = someSelected;
+                    }
+                  }}
+                  onChange={() => toggleFolderSelection(folder)}
+                />
+                <span>Select all</span>
+              </label>
+            )}
+          </div>
         )}
 
         {(isRoot || isExpanded) && (
@@ -123,13 +208,20 @@ export default function Library({ onSelect }) {
             {folder.files
               .sort((a, b) => a.name.localeCompare(b.name))
               .map((file) => (
-                <button
+                <label
                   key={`file-${file.path}`}
-                  type="button"
-                  className="library-tree-file"
-                  style={{ paddingLeft: `${(isRoot ? depth : depth + 1) * 16 + 16}px` }}
-                  onClick={() => onSelect && onSelect(file)}
+                  className={`library-tree-file${
+                    selectedMap.has(file.path) ? " library-tree-file-selected" : ""
+                  }`}
+                  style={{ paddingLeft: `${(isRoot ? depth : depth + 1) * 16 + 18}px` }}
+                  onDoubleClick={() => onSelect && onSelect([file])}
                 >
+                  <input
+                    type="checkbox"
+                    className="library-checkbox"
+                    checked={selectedMap.has(file.path)}
+                    onChange={() => toggleFileSelection(file)}
+                  />
                   <span className="library-tree-icon">📄</span>
                   <span className="library-tree-label">{file.name}</span>
                   {typeof file.size === "number" && (
@@ -137,7 +229,7 @@ export default function Library({ onSelect }) {
                       {(file.size / 1024 / 1024).toFixed(2)} MB
                     </span>
                   )}
-                </button>
+                </label>
               ))}
           </div>
         )}
@@ -172,9 +264,28 @@ export default function Library({ onSelect }) {
   return (
     <div className="library-panel">
       {hasContent ? (
-        <div className="library-tree">
-          {renderFolder(tree, 0)}
-        </div>
+        <>
+          <div className="library-tree">{renderFolder(tree, 0)}</div>
+          <div className="library-selection-footer">
+            <div className="library-selection-summary">
+              {selectedCount === 0
+                ? "No files selected"
+                : `${selectedCount} file${selectedCount === 1 ? "" : "s"} selected`}
+            </div>
+            <div className="library-selection-actions">
+              <button type="button" onClick={onCancel}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmSelection}
+                disabled={selectedCount === 0}
+              >
+                Add selected
+              </button>
+            </div>
+          </div>
+        </>
       ) : (
         <p className="library-empty">No documents available.</p>
       )}

@@ -146,8 +146,13 @@ export default function Header({
             </div>
             <div className="library-modal-body">
               <Library
-                onSelect={(item) => {
-                  onPickFromLibrary && onPickFromLibrary(item);
+                onSelect={(selection) => {
+                  if (onPickFromLibrary && selection && selection.length) {
+                    onPickFromLibrary(selection);
+                  }
+                  closeLibrary();
+                }}
+                onCancel={() => {
                   closeLibrary();
                 }}
               />
