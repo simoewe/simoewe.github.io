@@ -185,24 +185,24 @@ const TextAnalyzer = ({
   const insights = trendInsights || [];
 
   const frequencyEntries = frequencies ? Object.entries(frequencies) : [];
-  const technologyFrequencyEntries = frequencyEntries.filter(([keyword]) => !customKeywordSet.has(keyword.toLowerCase()));
-  const sortedTechnologyFrequencyEntries = technologyFrequencyEntries
-    .filter(([, value]) => value > 0)
-    .sort(([, a], [, b]) => b - a);
-  const keywordsFoundCount = technologyFrequencyEntries.filter(([, value]) => value > 0).length;
-  const totalOccurrences = technologyFrequencyEntries.reduce((sum, [, value]) => sum + value, 0);
-  const maxFrequencyValue = technologyFrequencyEntries.length > 0
-    ? Math.max(...technologyFrequencyEntries.map(([, value]) => value))
-    : 0;
-
-  const customFrequencyEntries = uniqueCustomKeywords.map((keyword) => {
-    const matchedEntry = frequencyEntries.find(([label]) => label.toLowerCase() === keyword.toLowerCase());
-    const frequencyValue = matchedEntry ? matchedEntry[1] : 0;
-    return [keyword, frequencyValue];
+  const positiveFrequencyEntries = frequencyEntries.filter(([, value]) => value > 0);
+  const annotatedFrequencyEntries = positiveFrequencyEntries.map(([keyword, value]) => {
+    const normalized = keyword.toLowerCase();
+    return {
+      keyword,
+      value,
+      isCustom: customKeywordSet.has(normalized)
+    };
   });
-  const customMaxFrequencyValue = customFrequencyEntries.length > 0
-    ? Math.max(...customFrequencyEntries.map(([, value]) => value))
+  const sortedFrequencyEntries = annotatedFrequencyEntries
+    .slice()
+    .sort((a, b) => b.value - a.value);
+  const keywordsFoundCount = sortedFrequencyEntries.length;
+  const totalOccurrences = sortedFrequencyEntries.reduce((sum, entry) => sum + entry.value, 0);
+  const maxFrequencyValue = sortedFrequencyEntries.length > 0
+    ? sortedFrequencyEntries[0].value
     : 0;
+  const hasKeywordFrequencies = sortedFrequencyEntries.length > 0;
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: '📊' },
@@ -237,7 +237,7 @@ const TextAnalyzer = ({
             {frequencies && densities && (
               <div className="stat-cards">
                 <div className="stat-card">
-                  <h4>Technology Keywords Found</h4>
+                  <h4>Keywords with Matches</h4>
                   <div className="stat-value">{keywordsFoundCount}</div>
                 </div>
                 <div className="stat-card">
@@ -260,56 +260,33 @@ const TextAnalyzer = ({
             )}
 
             {/* Frequency Chart */}
-            {frequencies && densities && (
-                <div className="chart-card">
-                  <h3>Technology Keyword Frequencies</h3>
-                  <div className="frequency-bars">
-                    {sortedTechnologyFrequencyEntries.length > 0 ? (
-                      sortedTechnologyFrequencyEntries
-                        .map(([keyword, freq]) => {
-                          const baseline = maxFrequencyValue || 1;
-                          const width = baseline > 0 ? (freq / baseline) * 100 : 0;
-                          return (
-                            <div key={keyword} className="frequency-bar">
-                              <div className="bar-label">
-                                <span className="keyword">{keyword}</span>
-                                <span className="count">{freq}</span>
-                              </div>
-                              <div className="bar-container">
-                                <div 
-                                  className="bar-fill" 
-                                  style={{ width: `${width}%` }}
-                                ></div>
-                              </div>
-                            </div>
-                          );
-                        })
-                    ) : (
-                      <div className="no-keyword-results">
-                        No technology keywords detected in this document.
-                      </div>
-                    )}
-                  </div>
-                </div>
-            )}
-
-            {frequencies && densities && uniqueCustomKeywords.length > 0 && (
+            {frequencies && (
               <div className="chart-card">
-                <h3>Custom Keyword Frequencies</h3>
+                <h3>Matched Keyword Frequencies</h3>
                 <div className="frequency-bars">
-                  {customFrequencyEntries.length > 0 ? (
-                    customFrequencyEntries.map(([keyword, freq]) => {
-                      const baseline = customMaxFrequencyValue || 1;
-                      const width = baseline > 0 ? (freq / baseline) * 100 : 0;
+                  {hasKeywordFrequencies ? (
+                    sortedFrequencyEntries.map(({ keyword, value, isCustom }) => {
+                      const baseline = maxFrequencyValue || 1;
+                      const width = baseline > 0 ? (value / baseline) * 100 : 0;
                       return (
-                        <div key={keyword} className="frequency-bar">
+                        <div
+                          key={keyword}
+                          className={`frequency-bar${isCustom ? " frequency-bar-custom" : ""}`}
+                        >
                           <div className="bar-label">
-                            <span className="keyword">{keyword}</span>
-                            <span className="count">{freq}</span>
+                            <span className="keyword">
+                              {keyword}
+                              {isCustom && (
+                                <span className="keyword-badge" title="Provided keyword">
+                                  Custom
+                                </span>
+                              )}
+                            </span>
+                            <span className="count">{value}</span>
                           </div>
                           <div className="bar-container">
-                            <div 
-                              className="bar-fill" 
+                            <div
+                              className="bar-fill"
                               style={{ width: `${width}%` }}
                             ></div>
                           </div>
@@ -318,7 +295,7 @@ const TextAnalyzer = ({
                     })
                   ) : (
                     <div className="no-keyword-results">
-                      No custom keywords provided for this analysis.
+                      No keywords with matches were detected in this document.
                     </div>
                   )}
                 </div>
