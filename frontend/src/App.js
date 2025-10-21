@@ -734,7 +734,7 @@ function App() {
                                   onClick={() => handleDocumentSelection(doc.id)}
                                   className="analysis-card-action"
                                 >
-                                  Focus viewer
+                                  Open in viewer
                                 </button>
                               </div>
                             </div>
