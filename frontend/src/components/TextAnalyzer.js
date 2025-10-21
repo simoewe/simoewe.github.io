@@ -265,23 +265,13 @@ const TextAnalyzer = ({
                 <h3>Matched Keyword Frequencies</h3>
                 <div className="frequency-bars">
                   {hasKeywordFrequencies ? (
-                    sortedFrequencyEntries.map(({ keyword, value, isCustom }) => {
+                    sortedFrequencyEntries.map(({ keyword, value }) => {
                       const baseline = maxFrequencyValue || 1;
                       const width = baseline > 0 ? (value / baseline) * 100 : 0;
                       return (
-                        <div
-                          key={keyword}
-                          className={`frequency-bar${isCustom ? " frequency-bar-custom" : ""}`}
-                        >
+                        <div key={keyword} className="frequency-bar">
                           <div className="bar-label">
-                            <span className="keyword">
-                              {keyword}
-                              {isCustom && (
-                                <span className="keyword-badge" title="Provided keyword">
-                                  Custom
-                                </span>
-                              )}
-                            </span>
+                            <span className="keyword">{keyword}</span>
                             <span className="count">{value}</span>
                           </div>
                           <div className="bar-container">

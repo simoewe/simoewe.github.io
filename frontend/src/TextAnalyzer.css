@@ -301,28 +301,6 @@
   transition: width 0.8s ease;
 }
 
-.frequency-bar-custom .bar-fill {
-  background: linear-gradient(90deg, #312e81 0%, #6366f1 100%);
-}
-
-.keyword-badge {
-  background: #eef2ff;
-  color: #3730a3;
-  font-size: 11px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.frequency-bar-custom .keyword {
-  color: #312e81;
-}
-
-.frequency-bar-custom .keyword-badge {
-  background: #ede9fe;
-  color: #5b21b6;
-}
 
 /* Wordcloud Section */
 .wordcloud-section {
@@ -1040,7 +1018,6 @@
   }
 
   .stat-value,
-  .keyword,
   .trend-name {
     color: #f8fafc;
   }
@@ -1052,12 +1029,28 @@
     box-shadow: 0 16px 32px rgba(8, 11, 19, 0.5);
   }
 
+  .chart-card h3 {
+    color: #f8fafc;
+  }
+
+  .keyword {
+    color: #e2e8f0;
+  }
+
+  .count {
+    color: #cbd5f5;
+  }
+
   .metric-card h3 {
     color: #f8fafc;
   }
 
   .bar-container {
     background: rgba(148, 163, 184, 0.2);
+  }
+
+  .bar-fill {
+    background: linear-gradient(90deg, rgba(248, 113, 113, 0.85) 0%, rgba(251, 113, 133, 0.95) 100%);
   }
 
   .wordcloud-image {

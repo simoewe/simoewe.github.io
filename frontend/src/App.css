@@ -740,7 +740,50 @@ textarea:focus {
   .viewer-tab-indicator.viewer-status-idle {
     background: #6b7280;
   }
-  
+ 
+  .modal-card.code-entry {
+    background: #111827;
+    border-color: #1f2937;
+    box-shadow: 0 24px 52px rgba(8, 11, 19, 0.65);
+  }
+
+  .modal-card.code-entry .modal-header h2 {
+    color: #f8fafc;
+  }
+
+  .code-form label {
+    color: #cbd5f5;
+  }
+
+  .code-form input {
+    background: rgba(15, 23, 42, 0.8);
+    border-color: #334155;
+    color: #e2e8f0;
+  }
+
+  .code-form input:focus {
+    border-color: #f472b6;
+    box-shadow: 0 0 0 3px rgba(244, 114, 182, 0.3);
+  }
+
+  .code-progress-text {
+    color: #cbd5f5;
+  }
+
+  .code-error {
+    color: #fecaca;
+  }
+
+  .code-actions button {
+    background: rgba(148, 163, 184, 0.25);
+    color: #f8fafc;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+  }
+
+  .code-actions button:hover:not(:disabled) {
+    background: rgba(148, 163, 184, 0.35);
+  }
+
   .pdf-viewer {
     background: #1f2937;
   }
