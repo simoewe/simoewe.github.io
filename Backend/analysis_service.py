@@ -103,7 +103,7 @@ def analyze_document(text, user_keywords, text_metadata=None):
     freq = {}
     kwic_results = {}
     collocations = {}
-    window = 5
+    window = 20
 
     page_map = []
     if text_metadata and isinstance(text_metadata, dict):
