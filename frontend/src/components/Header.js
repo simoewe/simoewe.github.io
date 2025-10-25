@@ -5,6 +5,7 @@ import UHHLogo from "../UHH_Logo.svg";
 
 export default function Header({
   onPickFromLibrary,
+  onRequestUpload,
 }) {
   const [showLib, setShowLib] = useState(false);
   const [showCodePrompt, setShowCodePrompt] = useState(false);
@@ -101,6 +102,11 @@ export default function Header({
         </div>
 
         <ul className="nav-rechts">
+          {typeof onRequestUpload === "function" && (
+            <li>
+              <button onClick={onRequestUpload}>Upload</button>
+            </li>
+          )}
           <li>
             <button onClick={handleLibraryClick}>Library</button>
           </li>

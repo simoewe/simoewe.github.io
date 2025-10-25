@@ -22,6 +22,7 @@ function RightPanel({
   onSelectDocument,
   libraryLoading = false,
   uploadingDocuments = false,
+  uploadPanelTrigger = 0,
 }) {
   const [uploadStatus, setUploadStatus] = useState("");
   const [fileTypeError, setFileTypeError] = useState("");
@@ -46,6 +47,13 @@ function RightPanel({
       return documents[documents.length - 1]?.id || "upload";
     });
   }, [documents, activeDocumentId]);
+
+  useEffect(() => {
+    if (!uploadPanelTrigger) {
+      return;
+    }
+    setActiveTab("upload");
+  }, [uploadPanelTrigger]);
 
   const handleDrop = (acceptedFiles, rejectedFiles) => {
     setFileTypeError("");
@@ -102,8 +110,6 @@ function RightPanel({
     activeTab !== "upload"
       ? documents.find((doc) => doc.id === activeTab)
       : null;
-
-  const handleSelectUpload = () => setActiveTab("upload");
 
   const handleSelectDocumentTab = (docId) => {
     setActiveTab(docId);
@@ -246,32 +252,29 @@ function RightPanel({
   return (
     <div className="right-panel">
       <div className="viewer-tab-bar">
-        <button
-          type="button"
-          className={`viewer-tab${activeTab === "upload" ? " viewer-tab-active" : ""}`}
-          onClick={handleSelectUpload}
-        >
-          Upload
-        </button>
-        {documents.map((doc) => (
-          <button
-            key={doc.id}
-            type="button"
-            className={`viewer-tab${activeTab === doc.id ? " viewer-tab-active" : ""}`}
-            onClick={() => handleSelectDocumentTab(doc.id)}
-            title={doc.name}
-          >
-            <span className="viewer-tab-label">{doc.name}</span>
-            <span
-              className={`viewer-tab-remove viewer-status-${doc.status || "idle"}`}
-              title="Remove document"
-              aria-hidden="true"
-              onClick={(event) => handleRemoveDocumentTab(event, doc.id)}
+        {documents.map((doc) => {
+          const statusClass = `viewer-tab-status-${doc.status || "idle"}`;
+          const isActive = activeTab === doc.id;
+          return (
+            <button
+              key={doc.id}
+              type="button"
+              className={`viewer-tab${isActive ? " viewer-tab-active" : ""} ${statusClass}`}
+              onClick={() => handleSelectDocumentTab(doc.id)}
+              title={doc.name}
             >
-              ×
-            </span>
-          </button>
-        ))}
+              <span className="viewer-tab-label">{doc.name}</span>
+              <span
+                className={`viewer-tab-remove viewer-status-${doc.status || "idle"}`}
+                title="Remove document"
+                aria-hidden="true"
+                onClick={(event) => handleRemoveDocumentTab(event, doc.id)}
+              >
+                ×
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       <div className="viewer-body">

@@ -70,6 +70,7 @@ function App() {
   const [technologyFeedback, setTechnologyFeedback] = useState("");
   const [showKeywordModal, setShowKeywordModal] = useState(false);
   const [activeFooterModal, setActiveFooterModal] = useState(null);
+  const [uploadPanelTrigger, setUploadPanelTrigger] = useState(0);
 
   const DEFAULT_ANALYSIS_STEPS = useMemo(() => ([
     { id: 'upload', label: 'Upload & validation' },
@@ -389,6 +390,10 @@ function App() {
     setActiveDocumentId(docId);
   }, []);
 
+  const handleUploadPanelRequest = useCallback(() => {
+    setUploadPanelTrigger((prev) => prev + 1);
+  }, []);
+
   const handleLibraryPick = useCallback(async (selection) => {
     const rawSelections = Array.isArray(selection) ? selection : [selection];
     const normalizedItems = rawSelections
@@ -607,11 +612,12 @@ function App() {
 
   const totalDocuments = documents.length;
   const analyzingCount = documents.filter((doc) => doc.status === "loading").length;
+  const processedCount = Math.max(0, totalDocuments - analyzingCount);
   const analyzeButtonDisabled = loading || libraryLoading || totalDocuments === 0;
   const analyzeButtonLabel = libraryLoading
     ? "Loading document..."
     : loading
-      ? `Analyzing${totalDocuments > 1 ? ` (${analyzingCount}/${totalDocuments})` : "..."}`
+      ? `Analyzing${totalDocuments > 1 ? ` (${processedCount}/${totalDocuments})` : "..."}`
       : totalDocuments > 1
         ? "Analyze all"
         : "Analyze";
@@ -620,6 +626,7 @@ function App() {
     <div className="app">
       <Header
         onPickFromLibrary={handleLibraryPick}
+        onRequestUpload={handleUploadPanelRequest}
       />
       <LegalNoticeModal
         isOpen={activeFooterModal === "legal"}
@@ -897,6 +904,7 @@ function App() {
                   onSelectDocument={handleDocumentSelection}
                   libraryLoading={libraryLoading}
                   uploadingDocuments={uploadingDocuments}
+                  uploadPanelTrigger={uploadPanelTrigger}
                 />
               </div>
             </div>
