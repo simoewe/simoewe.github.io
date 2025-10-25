@@ -2437,10 +2437,6 @@ textarea:focus {
   align-items: flex-start;
   gap: 16px;
   flex-wrap: wrap;
-  padding: 16px;
-  border-radius: 12px;
-  border: 1px solid #e5e7eb;
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
 }
 
 .viewer-document-title {
@@ -2606,6 +2602,56 @@ textarea:focus {
   font-size: 14px;
   font-weight: 600;
   color: #1f2937;
+}
+
+@media (prefers-color-scheme: dark) {
+  .viewer-tab-bar {
+    background: rgba(30, 41, 59, 0.85);
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    border-radius: 12px;
+    padding: 6px;
+  }
+
+  .viewer-tab {
+    color: #e5e7eb;
+  }
+
+  .viewer-tab:hover {
+    background: rgba(226, 0, 26, 0.25);
+    color: #fca5a5;
+  }
+
+  .viewer-tab-active {
+    background: #f9fafb;
+    color: #111827;
+  }
+
+  .viewer-tab.viewer-tab-status-success {
+    background: rgba(16, 185, 129, 0.2);
+    color: #6ee7b7;
+  }
+
+  .viewer-tab.viewer-tab-status-loading,
+  .viewer-tab.viewer-tab-status-error {
+    background: rgba(239, 68, 68, 0.2);
+    color: #fecaca;
+  }
+
+  .viewer-tab.viewer-tab-status-idle {
+    background: transparent;
+    color: #e5e7eb;
+  }
+
+  .viewer-tab-active.viewer-tab-status-success {
+    background: rgba(16, 185, 129, 0.35);
+    color: #064e3b;
+  }
+
+  .viewer-tab-active.viewer-tab-status-loading,
+  .viewer-tab-active.viewer-tab-status-error {
+    background: rgba(239, 68, 68, 0.35);
+    color: #7f1d1d;
+  }
 }
 
 @keyframes viewer-spin {
