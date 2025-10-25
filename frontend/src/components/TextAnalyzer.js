@@ -576,6 +576,7 @@ const TextAnalyzer = ({
                       <span>Density</span>
                     </div>
                     {Object.entries(frequencies)
+                      .filter(([, freq]) => freq > 0)
                       .sort(([,a], [,b]) => b - a)
                       .map(([keyword, freq]) => (
                         <div key={keyword} className="table-row">

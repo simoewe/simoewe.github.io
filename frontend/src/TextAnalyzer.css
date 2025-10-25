@@ -1045,6 +1045,11 @@
     color: #f8fafc;
   }
 
+  .frequency-cell,
+  .density-cell {
+    color: #e2e8f0;
+  }
+
   .bar-container {
     background: rgba(148, 163, 184, 0.2);
   }
@@ -1058,6 +1063,7 @@
   }
 
   .keyword-title {
+    color: #fecaca;
     border-bottom-color: rgba(248, 113, 113, 0.4);
   }
 
@@ -1088,9 +1094,18 @@
     color: #fefce8;
   }
 
+  .collocations-content,
+  .collocation-item {
+    color: #e2e8f0;
+  }
+
   .collocation-tag {
     background: rgba(148, 163, 184, 0.2);
     color: #f8fafc;
+  }
+
+  .collocation-tag .count {
+    color: #cbd5f5;
   }
 
   .trend-item {
