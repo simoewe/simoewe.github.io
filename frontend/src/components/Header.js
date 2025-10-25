@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import UHH_Logo from "../UHH_Logo.svg.png";
 import Library from "./Library";
 import { getApiBase } from "../utils/apiBase";
 
@@ -94,12 +93,18 @@ export default function Header({
     }
   };
 
+  const uhhLogoSrc = `${process.env.PUBLIC_URL || ""}/uhh-logo.png`;
+
   return (
     <header className="header">
       <nav className="navbar">
         <div className="logo">
-          <img src={UHH_Logo} alt="logo" className="logo-img" />
-          <span className="logo-text">Project <b>Stahlbock</b></span>
+          <img
+            src={uhhLogoSrc}
+            alt="University of Hamburg logo"
+            className="logo-img"
+          />
+          <span className="logo-text">Trendalyze</span>
         </div>
 
         <ul className="nav-rechts">

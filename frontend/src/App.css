@@ -69,21 +69,27 @@ html {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  padding: 16px 32px;
+  padding: 10px 20px;
   width: 100%;
-  gap: 24px;
+  gap: 16px;
 }
 
 /* Logo Styles */
 .logo {
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-size: 20px;
-  font-weight: 700;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 600;
   color: #1f2937;
   text-decoration: none;
   transition: color 0.2s ease;
+}
+
+.logo-text {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
 
 .logo:hover {
@@ -91,7 +97,7 @@ html {
 }
 
 .logo-img {
-  height: 36px;
+  height: 28px;
   width: auto;
   object-fit: contain;
 }
@@ -100,7 +106,7 @@ html {
 .nav-rechts {
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: 16px;
   list-style: none;
   margin: 0;
   margin-left: auto;
@@ -108,18 +114,33 @@ html {
 
 .nav-rechts li {
   font-weight: 500;
-  font-size: 15px;
+  font-size: 13px;
   color: #6b7280;
   cursor: pointer;
-  padding: 8px 12px;
   border-radius: 6px;
-  transition: all 0.2s ease;
+  transition: color 0.2s ease;
   position: relative;
 }
 
 .nav-rechts li:hover {
   color: #e2001a;
-  background: rgba(226, 0, 26, 0.05);
+}
+
+.nav-rechts button {
+  padding: 6px 14px;
+  font-size: 13px;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(226, 0, 26, 0.2);
+  letter-spacing: 0.01em;
+}
+
+.nav-rechts button:hover:not(:disabled) {
+  transform: none;
+  box-shadow: 0 3px 5px rgba(226, 0, 26, 0.25);
+}
+
+.nav-rechts button:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 /* Panel System */
@@ -804,7 +825,7 @@ textarea:focus {
 /* Responsive Design */
 @media (max-width: 1024px) {
   .navbar {
-    padding: 12px 20px;
+    padding: 8px 16px;
   }
   
   .pane-content {
@@ -812,11 +833,16 @@ textarea:focus {
   }
   
   .nav-rechts {
-    gap: 16px;
+    gap: 12px;
   }
   
   .nav-rechts li {
-    font-size: 14px;
+    font-size: 12px;
+  }
+
+  .nav-rechts button {
+    padding: 5px 12px;
+    font-size: 12px;
   }
 }
 
@@ -828,6 +854,10 @@ textarea:focus {
   .logo {
     font-size: 18px;
   }
+
+  .logo-text {
+    font-size: 16px;
+  }
   
   .nav-rechts {
     gap: 12px;
@@ -836,6 +866,11 @@ textarea:focus {
   .nav-rechts li {
     padding: 6px 8px;
     font-size: 13px;
+  }
+
+  .nav-rechts button {
+    padding: 5px 12px;
+    font-size: 12px;
   }
   
   .pane-content {
@@ -868,6 +903,10 @@ textarea:focus {
   .logo {
     font-size: 16px;
   }
+
+  .logo-text {
+    font-size: 15px;
+  }
   
   .nav-rechts {
     gap: 8px;
@@ -878,6 +917,11 @@ textarea:focus {
   .nav-rechts li {
     padding: 4px 6px;
     font-size: 12px;
+  }
+
+  .nav-rechts button {
+    padding: 4px 10px;
+    font-size: 11px;
   }
   
   .pane-content {
