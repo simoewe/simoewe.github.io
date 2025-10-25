@@ -3,6 +3,6 @@
 // defining window.__APP_API_URL__ before this script runs.
 (function configureApiBase(global) {
   if (typeof global !== 'undefined' && !global.__APP_API_URL__) {
-    global.__APP_API_URL__ = 'https://simoewe-github-io.onrender.com';
+    global.__APP_API_URL__ = 'https://trendalyze-services.onrender.com';
   }
 })(typeof window !== 'undefined' ? window : undefined);

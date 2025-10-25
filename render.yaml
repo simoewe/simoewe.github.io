@@ -12,7 +12,7 @@ services:
     startCommand: gunicorn app:app
     envVars:
       - key: FRONTEND_URL
-        value: https://simoewe-github-io-1-cdi0.onrender.com
+        value: https://trendalyze.onrender.com
       - key: GUNICORN_CMD_ARGS
         value: "--timeout 600 --graceful-timeout 630 --max-requests 20"
 
@@ -25,4 +25,4 @@ services:
     publishPath: build
     envVars:
       - key: REACT_APP_API_URL
-        value: https://simoewe-github-io-z78f.onrender.com
+        value: https://trendalyze-services.onrender.com

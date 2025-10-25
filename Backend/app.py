@@ -47,7 +47,7 @@ app = Flask(__name__, static_folder="../frontend/build", static_url_path="/")
 
 # Configure CORS for Render deployment
 allowed_origins = [
-    "https://simoewe-github-io-1-cdi0.onrender.com",  # legacy Render deployment
+    "https://trendalyze.onrender.com",
     "http://localhost:3000",  # Local development
     "https://simoewe.github.io",  # GitHub Pages if used
 ]
