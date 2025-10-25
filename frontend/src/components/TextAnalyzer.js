@@ -21,8 +21,7 @@ const TextAnalyzer = ({
   const [activeTab, setActiveTab] = useState('overview');
   const [expandedSections, setExpandedSections] = useState({
     kwic: false,
-    collocations: false,
-    trends: false
+    collocations: false
   });
 
   const toggleSection = (section) => {
@@ -202,6 +201,17 @@ const TextAnalyzer = ({
     ? sortedFrequencyEntries[0].value
     : 0;
   const hasKeywordFrequencies = sortedFrequencyEntries.length > 0;
+  const keywordsWithMatches = new Set(sortedFrequencyEntries.map(({ keyword }) => keyword));
+  const kwicEntriesWithMatches = kwic
+    ? Object.entries(kwic).filter(([keyword, contexts]) =>
+        keywordsWithMatches.has(keyword) &&
+        Array.isArray(contexts) &&
+        contexts.length > 0
+      )
+    : [];
+  const collocationEntriesWithMatches = collocations
+    ? Object.entries(collocations).filter(([keyword]) => keywordsWithMatches.has(keyword))
+    : [];
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: '📊' },
@@ -374,7 +384,7 @@ const TextAnalyzer = ({
         {activeTab === 'details' && (
           <div className="details-section">
             {/* KWIC Results */}
-            {kwic && Object.keys(kwic).length > 0 && (
+            {kwicEntriesWithMatches.length > 0 && (
               <div className="collapsible-section">
                 <button 
                   className="section-header"
@@ -385,7 +395,7 @@ const TextAnalyzer = ({
                 </button>
                 {expandedSections.kwic && (
                   <div className="kwic-content">
-                    {Object.entries(kwic).map(([keyword, contexts], idx) => (
+                    {kwicEntriesWithMatches.map(([keyword, contexts], idx) => (
                       <div key={idx} className="kwic-keyword">
                         <h4 className="keyword-title">{keyword}</h4>
                         <div className="context-list">
@@ -439,7 +449,7 @@ const TextAnalyzer = ({
             )}
 
             {/* Collocations */}
-            {collocations && Object.keys(collocations).length > 0 && (
+            {collocationEntriesWithMatches.length > 0 && (
               <div className="collapsible-section">
                 <button 
                   className="section-header"
@@ -450,7 +460,7 @@ const TextAnalyzer = ({
                 </button>
                 {expandedSections.collocations && (
                   <div className="collocations-content">
-                    {Object.entries(collocations).map(([keyword, colloc], idx) => (
+                    {collocationEntriesWithMatches.map(([keyword, colloc], idx) => (
                       <div key={idx} className="collocation-item">
                         <h4 className="keyword-title">{keyword}</h4>
                         <div className="collocation-grid">
@@ -482,35 +492,6 @@ const TextAnalyzer = ({
               </div>
             )}
 
-            {/* Trends */}
-            {trends && trends.length > 0 && (
-              <div className="collapsible-section">
-                <button 
-                  className="section-header"
-                  onClick={() => toggleSection('trends')}
-                >
-                  <h3>Technological Trends</h3>
-                  <span className={`arrow ${expandedSections.trends ? 'expanded' : ''}`}>▶</span>
-                </button>
-                {expandedSections.trends && (
-                  <div className="trends-content">
-                    {trends.map((trend, idx) => (
-                      <div key={idx} className="trend-item">
-                        <div className="trend-header">
-                          <h4 className="trend-name">{trend.trend}</h4>
-                          <span className="trend-count">{trend.count} occurrences</span>
-                        </div>
-                        <div className="trend-contexts">
-                          {trend.contexts.slice(0, 3).map((ctx, i) => (
-                            <div key={i} className="context-snippet">"{ctx}"</div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         )}
 
