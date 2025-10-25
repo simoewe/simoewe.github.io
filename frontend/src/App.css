@@ -187,42 +187,53 @@ html {
 }
 
 .site-footer {
-  border-top: 1px solid #e5e7eb;
-  background: #ffffff;
-  padding: 16px 24px;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  background: #f3f4f6;
+  padding: 8px 16px;
   flex-shrink: 0;
 }
 
 .site-footer-links {
   display: flex;
   justify-content: center;
-  gap: 12px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
 .site-footer-link {
-  background: none;
+  background: transparent;
   border: none;
-  color: #6b7280;
-  font-size: 13px;
+  color: #4b5563;
+  font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.01em;
-  padding: 4px 8px;
-  border-radius: 4px;
+  padding: 2px 6px;
+  border-radius: 3px;
   cursor: pointer;
   text-decoration: none;
-  transition: color 0.2s ease, background 0.2s ease;
+  transition: color 0.15s ease;
 }
 
 .site-footer-link:hover,
 .site-footer-link:focus-visible {
   color: #111827;
-  background: rgba(17, 24, 39, 0.06);
   outline: none;
 }
 
-.site-footer-link:focus-visible {
-  box-shadow: 0 0 0 1px rgba(17, 24, 39, 0.12);
+@media (prefers-color-scheme: dark) {
+  .site-footer {
+    background: #0f172a;
+    border-top-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .site-footer-link {
+    color: #cbd5f5;
+  }
+
+  .site-footer-link:hover,
+  .site-footer-link:focus-visible {
+    color: #f8fafc;
+  }
 }
 
 .technology-editor-header {

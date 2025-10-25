@@ -1,32 +1,44 @@
 import React from "react";
 
-export default function Footer({ onOpenLegalNotice }) {
-  const handleLegalNoticeClick = (event) => {
+export default function Footer({ onOpenModal }) {
+  const handleClick = (type) => (event) => {
     event.preventDefault();
-    if (typeof onOpenLegalNotice === "function") {
-      onOpenLegalNotice();
+    if (typeof onOpenModal === "function") {
+      onOpenModal(type);
     }
   };
 
   return (
     <footer className="site-footer">
       <div className="site-footer-links">
-        <a className="site-footer-link" href="#about">
-          About
-        </a>
-        <a className="site-footer-link" href="#terms">
-          Terms of Use
-        </a>
         <button
           type="button"
           className="site-footer-link"
-          onClick={handleLegalNoticeClick}
+          onClick={handleClick("about")}
+        >
+          About
+        </button>
+        <button
+          type="button"
+          className="site-footer-link"
+          onClick={handleClick("terms")}
+        >
+          Terms of Use
+        </button>
+        <button
+          type="button"
+          className="site-footer-link"
+          onClick={handleClick("legal")}
         >
           Legal Notice
         </button>
-        <a className="site-footer-link" href="mailto:simon.laatz@studium.uni-hamburg.de">
+        <button
+          type="button"
+          className="site-footer-link"
+          onClick={handleClick("contact")}
+        >
           Contact
-        </a>
+        </button>
       </div>
     </footer>
   );

@@ -5,6 +5,7 @@ import KeywordInput from "./components/Input";
 import TextAnalyzer from "./components/TextAnalyzer";
 import LegalNoticeModal from "./components/LegalNoticeModal";
 import Footer from "./components/Footer";
+import InfoModal from "./components/InfoModal";
 import { getApiBase } from "./utils/apiBase";
 import './App.css';
 import {
@@ -46,7 +47,7 @@ function App() {
   const analysisTimersRef = useRef(new Map());
   const [technologyFeedback, setTechnologyFeedback] = useState("");
   const [showKeywordModal, setShowKeywordModal] = useState(false);
-  const [showLegalNotice, setShowLegalNotice] = useState(false);
+  const [activeFooterModal, setActiveFooterModal] = useState(null);
 
   const DEFAULT_ANALYSIS_STEPS = useMemo(() => ([
     { id: 'upload', label: 'Upload & validation' },
@@ -179,8 +180,10 @@ function App() {
 
   const openKeywordModal = useCallback(() => setShowKeywordModal(true), []);
   const closeKeywordModal = useCallback(() => setShowKeywordModal(false), []);
-  const openLegalNotice = useCallback(() => setShowLegalNotice(true), []);
-  const closeLegalNotice = useCallback(() => setShowLegalNotice(false), []);
+  const openFooterModal = useCallback((type) => {
+    setActiveFooterModal(type);
+  }, []);
+  const closeFooterModal = useCallback(() => setActiveFooterModal(null), []);
 
   const modifyKeywords = useCallback((terms, label, mode) => {
     if (!Array.isArray(terms) || terms.length === 0) {
@@ -575,7 +578,57 @@ function App() {
         onPickFromLibrary={handleLibraryPick}
         onOpenKeywords={openKeywordModal}
       />
-      <LegalNoticeModal isOpen={showLegalNotice} onClose={closeLegalNotice} />
+      <LegalNoticeModal
+        isOpen={activeFooterModal === "legal"}
+        onClose={closeFooterModal}
+      />
+      <InfoModal
+        title="About Trendalyze"
+        isOpen={activeFooterModal === "about"}
+        onClose={closeFooterModal}
+      >
+        <p>
+          Trendalyze unterstützt Forschende und Studierende dabei, umfangreiche Unternehmensberichte
+          schnell zu analysieren. Der Fokus liegt auf Technologie-Trends, ESG-Themen und
+          innovationsrelevanten Begriffen, damit Sie aus Textmengen schneller zentrale Aussagen ableiten können.
+        </p>
+        <p>
+          Das Tool entstand im Rahmen eines Projekts der Universität Hamburg und kombiniert automatisierte
+          Textextraktion mit einer interaktiven Ergebnisdarstellung. Wir erweitern die Bibliothek fortlaufend
+          und freuen uns über Feedback zu zusätzlichen Dokumenttypen oder Anwendungsfällen.
+        </p>
+      </InfoModal>
+      <InfoModal
+        title="Terms of Use"
+        isOpen={activeFooterModal === "terms"}
+        onClose={closeFooterModal}
+      >
+        <ul>
+          <li>Trendalyze darf ausschließlich zu Forschungs- und Lehrzwecken innerhalb des Projektkontextes genutzt werden.</li>
+          <li>Alle hochgeladenen oder geladenen Dokumente müssen frei zugänglich sein oder vom Rechteinhaber freigegeben werden.</li>
+          <li>Die erzeugten Analysen dienen als Unterstützung und ersetzen keine rechtliche oder wirtschaftliche Beratung.</li>
+          <li>Durch die Nutzung stimmen Sie zu, keine sensiblen oder personenbezogenen Daten ohne Zustimmung zu verarbeiten.</li>
+        </ul>
+      </InfoModal>
+      <InfoModal
+        title="Contact"
+        isOpen={activeFooterModal === "contact"}
+        onClose={closeFooterModal}
+      >
+        <p>
+          Sie haben Fragen, möchten Feedback geben oder einen Fehler melden? Das Projektteam freut sich auf Ihre Nachricht.
+        </p>
+        <p>
+          <strong>Projektleitung:</strong> Simon Laatz<br />
+          <strong>E-Mail:</strong>{" "}
+          <a href="mailto:simon.laatz@studium.uni-hamburg.de">
+            simon.laatz@studium.uni-hamburg.de
+          </a>
+        </p>
+        <p>
+          Teilen Sie uns bitte auch mit, wenn Sie zusätzliche Dokumente beisteuern oder die Bibliothek erweitern möchten.
+        </p>
+      </InfoModal>
 
       {showKeywordModal && (
         <div
@@ -806,7 +859,7 @@ function App() {
           </Panel>
         </PanelGroup>
       </div>
-      <Footer onOpenLegalNotice={openLegalNotice} />
+      <Footer onOpenModal={openFooterModal} />
     </div>
   );
 }
