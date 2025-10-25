@@ -1,7 +1,7 @@
 """Shared constants for the backend analysis pipeline."""
 
 ALLOWED_EXTENSIONS = {'.pdf', '.docx', '.txt'}
-MAX_PDF_PAGES = 300
+MAX_PDF_PAGES = 500
 MAX_WORDS_ANALYSIS = 120_000
 PDF_OPTIMIZE_THRESHOLD_BYTES = 8 * 1024 * 1024  # 8 MB
 PDF_PDFMINER_MAX_BYTES = 4 * 1024 * 1024  # Don't send very large PDFs to pdfminer

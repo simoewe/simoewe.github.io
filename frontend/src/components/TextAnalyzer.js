@@ -201,16 +201,21 @@ const TextAnalyzer = ({
     ? sortedFrequencyEntries[0].value
     : 0;
   const hasKeywordFrequencies = sortedFrequencyEntries.length > 0;
-  const keywordsWithMatches = new Set(sortedFrequencyEntries.map(({ keyword }) => keyword));
   const kwicEntriesWithMatches = kwic
-    ? Object.entries(kwic).filter(([keyword, contexts]) =>
-        keywordsWithMatches.has(keyword) &&
+    ? Object.entries(kwic).filter(([, contexts]) =>
         Array.isArray(contexts) &&
         contexts.length > 0
       )
     : [];
   const collocationEntriesWithMatches = collocations
-    ? Object.entries(collocations).filter(([keyword]) => keywordsWithMatches.has(keyword))
+    ? Object.entries(collocations).filter(([, entry]) => {
+        if (!entry || typeof entry !== 'object') {
+          return false;
+        }
+        const left = Array.isArray(entry.left) ? entry.left : [];
+        const right = Array.isArray(entry.right) ? entry.right : [];
+        return left.length > 0 || right.length > 0;
+      })
     : [];
 
   const tabs = [
