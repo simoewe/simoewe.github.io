@@ -3,6 +3,8 @@ import Header from "./components/Header";
 import RightPanel from "./components/PdfViewer";
 import KeywordInput from "./components/Input";
 import TextAnalyzer from "./components/TextAnalyzer";
+import LegalNoticeModal from "./components/LegalNoticeModal";
+import Footer from "./components/Footer";
 import { getApiBase } from "./utils/apiBase";
 import './App.css';
 import {
@@ -44,6 +46,7 @@ function App() {
   const analysisTimersRef = useRef(new Map());
   const [technologyFeedback, setTechnologyFeedback] = useState("");
   const [showKeywordModal, setShowKeywordModal] = useState(false);
+  const [showLegalNotice, setShowLegalNotice] = useState(false);
 
   const DEFAULT_ANALYSIS_STEPS = useMemo(() => ([
     { id: 'upload', label: 'Upload & validation' },
@@ -176,6 +179,8 @@ function App() {
 
   const openKeywordModal = useCallback(() => setShowKeywordModal(true), []);
   const closeKeywordModal = useCallback(() => setShowKeywordModal(false), []);
+  const openLegalNotice = useCallback(() => setShowLegalNotice(true), []);
+  const closeLegalNotice = useCallback(() => setShowLegalNotice(false), []);
 
   const modifyKeywords = useCallback((terms, label, mode) => {
     if (!Array.isArray(terms) || terms.length === 0) {
@@ -570,6 +575,7 @@ function App() {
         onPickFromLibrary={handleLibraryPick}
         onOpenKeywords={openKeywordModal}
       />
+      <LegalNoticeModal isOpen={showLegalNotice} onClose={closeLegalNotice} />
 
       {showKeywordModal && (
         <div
@@ -800,6 +806,7 @@ function App() {
           </Panel>
         </PanelGroup>
       </div>
+      <Footer onOpenLegalNotice={openLegalNotice} />
     </div>
   );
 }

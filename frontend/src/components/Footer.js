@@ -1,9 +1,33 @@
-import React from 'react';
+import React from "react";
 
-const Footer = () => (
-  <footer style={{ background: '#f1f1f1', padding: '1rem', textAlign: 'center' }}>
-    <p>&copy; 2025 My React App</p>
-  </footer>
-);
+export default function Footer({ onOpenLegalNotice }) {
+  const handleLegalNoticeClick = (event) => {
+    event.preventDefault();
+    if (typeof onOpenLegalNotice === "function") {
+      onOpenLegalNotice();
+    }
+  };
 
-export default Footer;
+  return (
+    <footer className="site-footer">
+      <div className="site-footer-links">
+        <a className="site-footer-link" href="#about">
+          About
+        </a>
+        <a className="site-footer-link" href="#terms">
+          Terms of Use
+        </a>
+        <button
+          type="button"
+          className="site-footer-link"
+          onClick={handleLegalNoticeClick}
+        >
+          Legal Notice
+        </button>
+        <a className="site-footer-link" href="mailto:simon.laatz@studium.uni-hamburg.de">
+          Contact
+        </a>
+      </div>
+    </footer>
+  );
+}
