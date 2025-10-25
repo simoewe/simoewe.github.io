@@ -60,11 +60,13 @@ function App() {
   const [submittedKeywords, setSubmittedKeywords] = useState([]);
   const [loading, setLoading] = useState(false);
   const [libraryLoading, setLibraryLoading] = useState(false);
+  const [uploadingDocuments, setUploadingDocuments] = useState(false);
   const [error, setError] = useState("");
   const [documents, setDocuments] = useState([]);
   const [activeDocumentId, setActiveDocumentId] = useState(null);
   const objectUrlMapRef = useRef(new Map());
   const analysisTimersRef = useRef(new Map());
+  const pendingUploadsRef = useRef(0);
   const [technologyFeedback, setTechnologyFeedback] = useState("");
   const [showKeywordModal, setShowKeywordModal] = useState(false);
   const [activeFooterModal, setActiveFooterModal] = useState(null);
@@ -317,6 +319,9 @@ function App() {
       return;
     }
 
+    pendingUploadsRef.current += 1;
+    setUploadingDocuments(true);
+
     const newDocs = files.map((file) => {
       const id = generateDocumentId();
       const objectUrl = URL.createObjectURL(file);
@@ -342,6 +347,17 @@ function App() {
     setDocuments((prev) => [...prev, ...newDocs]);
     setActiveDocumentId(newDocs[newDocs.length - 1].id);
     setError("");
+    const settleUpload = () => {
+      pendingUploadsRef.current = Math.max(0, pendingUploadsRef.current - 1);
+      if (pendingUploadsRef.current === 0) {
+        setUploadingDocuments(false);
+      }
+    };
+    if (typeof window !== "undefined" && typeof window.requestAnimationFrame === "function") {
+      window.requestAnimationFrame(settleUpload);
+    } else {
+      setTimeout(settleUpload, 0);
+    }
   }, [createInitialSteps, generateDocumentId]);
 
   const handleRemoveDocument = useCallback((docId) => {
@@ -880,6 +896,7 @@ function App() {
                   onRemoveDocument={handleRemoveDocument}
                   onSelectDocument={handleDocumentSelection}
                   libraryLoading={libraryLoading}
+                  uploadingDocuments={uploadingDocuments}
                 />
               </div>
             </div>

@@ -21,10 +21,12 @@ function RightPanel({
   onRemoveDocument,
   onSelectDocument,
   libraryLoading = false,
+  uploadingDocuments = false,
 }) {
   const [uploadStatus, setUploadStatus] = useState("");
   const [fileTypeError, setFileTypeError] = useState("");
   const [activeTab, setActiveTab] = useState("upload");
+  const dropzoneDisabled = libraryLoading || uploadingDocuments;
 
   useEffect(() => {
     if (!documents.length) {
@@ -86,7 +88,7 @@ function RightPanel({
     onDrop: handleDrop,
     accept: { "application/pdf": [".pdf"], "application/x-pdf": [".pdf"] },
     multiple: true,
-    disabled: libraryLoading,
+    disabled: dropzoneDisabled,
     onDropRejected: (rejectedFiles) => {
       const reasons = rejectedFiles
         .map((file) => file.errors.map((err) => err.message).join(", "))
@@ -123,7 +125,7 @@ function RightPanel({
     <div
       {...getRootProps({
         className: `dropzone viewer-upload${
-          libraryLoading ? " dropzone-disabled" : ""
+          dropzoneDisabled ? " dropzone-disabled" : ""
         }`,
       })}
     >
@@ -140,12 +142,15 @@ function RightPanel({
             type="button"
             className="dropzone-button"
             onClick={open}
-            disabled={libraryLoading}
+            disabled={dropzoneDisabled}
           >
             Select files
           </button>
           {libraryLoading && (
             <p className="dropzone-hint">Loading document from library…</p>
+          )}
+          {!libraryLoading && uploadingDocuments && (
+            <p className="dropzone-hint">Uploading documents…</p>
           )}
           {fileTypeError && <p className="dropzone-error">{fileTypeError}</p>}
           {uploadStatus && !fileTypeError && (
@@ -273,6 +278,14 @@ function RightPanel({
         {activeTab === "upload" || !hasDocuments
           ? renderUploadArea()
           : renderActiveDocument()}
+        {(libraryLoading || uploadingDocuments) && (
+          <div className="viewer-loading-overlay" role="status" aria-live="polite">
+            <div className="viewer-spinner" aria-hidden="true" />
+            <p className="viewer-loading-text">
+              {libraryLoading ? "Loading document from library…" : "Uploading documents…"}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
