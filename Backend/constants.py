@@ -24,13 +24,19 @@ DEFAULT_TREND_KEYWORDS = [
     "Cloud Computing",
     "Edge Computing",
     "Fog Computing",
-    "Big Data Analytics"
+    "Big Data Analytics",
+    "Data-Analysis",
+    "Data Analytics",
+    "Advanced Data Analytics"
 ]
 
 TREND_TERMS = [
     "Artificial Intelligence",
     "Blockchain",
     "Big Data Analytics",
+    "Data-Analysis",
+    "Data Analytics",
+    "Advanced Data Analytics",
     "Internet of Things",
     "Digital Twin",
     "5G Network",

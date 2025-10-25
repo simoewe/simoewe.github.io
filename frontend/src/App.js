@@ -18,19 +18,39 @@ import {
   SPECIALIZED_TECHNOLOGY_TERMS,
 } from "./constants/technologies";
 
+const KEYWORD_SPLIT_REGEX = /[-_/\s.,!?:()\[\]'"]+/;
+
+const canonicalizeKeyword = (term = "") => {
+  if (typeof term !== "string") {
+    return "";
+  }
+  return term
+    .toLowerCase()
+    .split(KEYWORD_SPLIT_REGEX)
+    .filter(Boolean)
+    .join(' ')
+    .trim();
+};
+
 const parseKeywordString = (raw) => {
   if (!raw) return [];
   const seen = new Set();
-  return raw
+  const normalizedList = [];
+  raw
     .split(',')
     .map((term) => term.trim())
-    .filter((term) => {
-      if (!term) return false;
-      const lowered = term.toLowerCase();
-      if (seen.has(lowered)) return false;
-      seen.add(lowered);
-      return true;
+    .forEach((term) => {
+      if (!term) {
+        return;
+      }
+      const canonical = canonicalizeKeyword(term);
+      if (!canonical || seen.has(canonical)) {
+        return;
+      }
+      seen.add(canonical);
+      normalizedList.push(term);
     });
+  return normalizedList;
 };
 
 const formatKeywordString = (list) => list.join(', ');
@@ -196,15 +216,19 @@ function App() {
       const current = parseKeywordString(prev);
 
       if (mode === "add") {
-        const seen = new Set(current.map((term) => term.toLowerCase()));
+        const seen = new Set(
+          current
+            .map((term) => canonicalizeKeyword(term))
+            .filter(Boolean)
+        );
         const next = [...current];
         let added = 0;
         terms.forEach((term) => {
           const trimmed = term.trim();
           if (!trimmed) return;
-          const lowered = trimmed.toLowerCase();
-          if (seen.has(lowered)) return;
-          seen.add(lowered);
+          const canonical = canonicalizeKeyword(trimmed);
+          if (!canonical || seen.has(canonical)) return;
+          seen.add(canonical);
           next.push(trimmed);
           added += 1;
         });
@@ -219,14 +243,18 @@ function App() {
       }
 
       const removalSet = new Set(
-        terms.map((term) => term.trim().toLowerCase()).filter(Boolean)
+        terms
+          .map((term) => canonicalizeKeyword(term.trim()))
+          .filter(Boolean)
       );
       if (!removalSet.size) {
         feedbackMessage = `No ${label.toLowerCase()} available to remove.`;
         return prev;
       }
 
-      const next = current.filter((term) => !removalSet.has(term.toLowerCase()));
+      const next = current.filter(
+        (term) => !removalSet.has(canonicalizeKeyword(term))
+      );
       const removed = current.length - next.length;
       if (!removed) {
         feedbackMessage = `No ${label.toLowerCase()} found to remove.`;
@@ -576,7 +604,6 @@ function App() {
     <div className="app">
       <Header
         onPickFromLibrary={handleLibraryPick}
-        onOpenKeywords={openKeywordModal}
       />
       <LegalNoticeModal
         isOpen={activeFooterModal === "legal"}
@@ -588,14 +615,14 @@ function App() {
         onClose={closeFooterModal}
       >
         <p>
-          Trendalyze unterstützt Forschende und Studierende dabei, umfangreiche Unternehmensberichte
-          schnell zu analysieren. Der Fokus liegt auf Technologie-Trends, ESG-Themen und
-          innovationsrelevanten Begriffen, damit Sie aus Textmengen schneller zentrale Aussagen ableiten können.
+          Trendalyze helps researchers and students sift through lengthy corporate reports within minutes.
+          The tool highlights emerging technology trends, ESG narratives, and innovation topics so you can extract
+          key insights without reading every page manually.
         </p>
         <p>
-          Das Tool entstand im Rahmen eines Projekts der Universität Hamburg und kombiniert automatisierte
-          Textextraktion mit einer interaktiven Ergebnisdarstellung. Wir erweitern die Bibliothek fortlaufend
-          und freuen uns über Feedback zu zusätzlichen Dokumenttypen oder Anwendungsfällen.
+          Built at the University of Hamburg, the platform combines automated text extraction with interactive
+          visualisations. We continue to expand the document library and welcome suggestions for additional
+          industries or use cases.
         </p>
       </InfoModal>
       <InfoModal
@@ -604,10 +631,10 @@ function App() {
         onClose={closeFooterModal}
       >
         <ul>
-          <li>Trendalyze darf ausschließlich zu Forschungs- und Lehrzwecken innerhalb des Projektkontextes genutzt werden.</li>
-          <li>Alle hochgeladenen oder geladenen Dokumente müssen frei zugänglich sein oder vom Rechteinhaber freigegeben werden.</li>
-          <li>Die erzeugten Analysen dienen als Unterstützung und ersetzen keine rechtliche oder wirtschaftliche Beratung.</li>
-          <li>Durch die Nutzung stimmen Sie zu, keine sensiblen oder personenbezogenen Daten ohne Zustimmung zu verarbeiten.</li>
+          <li>Trendalyze may only be used for academic research and teaching purposes within this project.</li>
+          <li>Uploaded or fetched documents must be publicly available or cleared by the respective rights holder.</li>
+          <li>The generated analyses provide guidance only and do not replace legal, financial, or strategic advice.</li>
+          <li>By using the platform you confirm that you will not process sensitive or personal data without consent.</li>
         </ul>
       </InfoModal>
       <InfoModal
@@ -616,17 +643,17 @@ function App() {
         onClose={closeFooterModal}
       >
         <p>
-          Sie haben Fragen, möchten Feedback geben oder einen Fehler melden? Das Projektteam freut sich auf Ihre Nachricht.
+          Questions, feedback, or bug reports? The project team is happy to help.
         </p>
         <p>
-          <strong>Projektleitung:</strong> Simon Laatz<br />
-          <strong>E-Mail:</strong>{" "}
+          <strong>Project lead:</strong> Simon Laatz<br />
+          <strong>Email:</strong>{" "}
           <a href="mailto:simon.laatz@studium.uni-hamburg.de">
             simon.laatz@studium.uni-hamburg.de
           </a>
         </p>
         <p>
-          Teilen Sie uns bitte auch mit, wenn Sie zusätzliche Dokumente beisteuern oder die Bibliothek erweitern möchten.
+          Feel free to reach out if you would like to contribute additional documents or propose new functionality.
         </p>
       </InfoModal>
 

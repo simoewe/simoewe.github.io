@@ -15,7 +15,10 @@ export const DEFAULT_TECHNOLOGY_TERMS = [
   "Cloud Computing",
   "Edge Computing",
   "Fog Computing",
-  "Big Data Analytics"
+  "Big Data Analytics",
+  "Data-Analysis",
+  "Data Analytics",
+  "Advanced Data Analytics"
 ];
 
 export const GERMAN_TECHNOLOGY_TERMS = [
@@ -34,7 +37,10 @@ export const GERMAN_TECHNOLOGY_TERMS = [
   "Cloud-Computing",
   "Edge-Computing",
   "Fog-Computing",
-  "Big-Data-Analytik"
+  "Big-Data-Analytik",
+  "Datenanalyse",
+  "Datenanalysen",
+  "Datenanalytik"
 ];
 
 export const SPECIALIZED_TECHNOLOGY_TERMS = [
