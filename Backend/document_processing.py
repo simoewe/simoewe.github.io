@@ -173,14 +173,23 @@ def extract_text_pdf(file_stream, return_metadata=False):
         pymupdf_text = None
         pymupdf_pages = None
         pymupdf_page_spans = None
+        page_limit = MAX_PDF_PAGES
+
         if fitz:
             pymupdf_text, pymupdf_pages, pymupdf_page_spans = extract_text_pymupdf(
                 original_file_bytes,
                 reason_label="initial"
             )
-            if pymupdf_pages and pymupdf_pages > MAX_PDF_PAGES:
-                logging.info(f"PDF rejected due to page limit (PyMuPDF count): {pymupdf_pages} pages")
-                raise ValueError(f"PDF exceeds the page limit of {MAX_PDF_PAGES} pages.")
+            if (
+                page_limit is not None
+                and pymupdf_pages
+                and pymupdf_pages > page_limit
+            ):
+                logging.info(
+                    "PDF rejected due to page limit (PyMuPDF count): %s pages",
+                    pymupdf_pages
+                )
+                raise ValueError(f"PDF exceeds the page limit of {page_limit:,} pages.")
             if pymupdf_text:
                 if return_metadata:
                     return pymupdf_text, {"pages": pymupdf_page_spans or []}
@@ -206,9 +215,9 @@ def extract_text_pdf(file_stream, return_metadata=False):
                 raise ValueError("Failed to decrypt encrypted PDF")
 
         page_count = len(reader.pages)
-        if page_count > MAX_PDF_PAGES:
+        if page_limit is not None and page_count > page_limit:
             logging.info(f"PDF rejected due to page limit: {page_count} pages")
-            raise ValueError(f"PDF exceeds the page limit of {MAX_PDF_PAGES} pages.")
+            raise ValueError(f"PDF exceeds the page limit of {page_limit:,} pages.")
 
         text_buffer = io.StringIO()
         page_spans = []

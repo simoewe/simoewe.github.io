@@ -72,10 +72,11 @@ def analyze_document(text, user_keywords, text_metadata=None):
     words = [w.strip(".,!?;:()[]") for w in text_lower.split() if w.strip(".,!?;:()[]")]
     total_words = len(words)
 
-    if total_words > MAX_WORDS_ANALYSIS:
+    word_limit = MAX_WORDS_ANALYSIS
+    if word_limit is not None and total_words > word_limit:
         logging.info(f"Document rejected due to length: {total_words} words")
         raise ValueError(
-            f'Document too large (limit {MAX_WORDS_ANALYSIS:,} words). '
+            f'Document too large (limit {word_limit:,} words). '
             'Please choose a shorter file.'
         )
 

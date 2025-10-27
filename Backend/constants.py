@@ -1,8 +1,39 @@
 """Shared constants for the backend analysis pipeline."""
 
+import os
+
+
+def _get_int_env(name, default):
+    """
+    Read an integer limit from the environment.
+
+    Returns the default when the variable is missing or invalid.
+    Returns None (disabling the guard) when the variable is set to
+    <= 0 or to a semantic "no limit" marker.
+    """
+    raw_value = os.environ.get(name)
+    if raw_value is None:
+        return default
+
+    value = raw_value.strip()
+    if not value:
+        return default
+
+    lowered = value.lower()
+    if lowered in {"none", "null", "nolimit", "no_limit", "unlimited"}:
+        return None
+
+    try:
+        parsed = int(value.replace("_", "").replace(",", ""))
+    except ValueError:
+        return default
+
+    return parsed if parsed > 0 else None
+
+
 ALLOWED_EXTENSIONS = {'.pdf', '.docx', '.txt'}
-MAX_PDF_PAGES = 500
-MAX_WORDS_ANALYSIS = 120_000
+MAX_PDF_PAGES = _get_int_env('MAX_PDF_PAGES', 500)
+MAX_WORDS_ANALYSIS = _get_int_env('MAX_WORDS_ANALYSIS', 120_000)
 PDF_OPTIMIZE_THRESHOLD_BYTES = 8 * 1024 * 1024  # 8 MB
 PDF_PDFMINER_MAX_BYTES = 4 * 1024 * 1024  # Don't send very large PDFs to pdfminer
 PDF_PDFMINER_MAX_PAGES = 80
