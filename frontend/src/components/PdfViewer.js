@@ -129,13 +129,6 @@ function RightPanel({
     }
   };
 
-  const handleAddDocumentsClick = () => {
-    setActiveTab("upload");
-    if (!dropzoneDisabled) {
-      open();
-    }
-  };
-
   const handleShowUpload = () => {
     setActiveTab("upload");
   };
@@ -305,19 +298,9 @@ function RightPanel({
           )}
         </div>
         <div className="viewer-topbar-actions">
-          <button
-            type="button"
-            className="viewer-add-button"
-            onClick={handleAddDocumentsClick}
-            disabled={dropzoneDisabled}
-          >
-            PDFs hinzufügen
-          </button>
-          {hasDocuments && (
-            <span className="viewer-counter">
-              {documents.length} PDF{documents.length === 1 ? "" : "s"}
-            </span>
-          )}
+          <span className="viewer-counter">
+            {documents.length} PDF{documents.length === 1 ? "" : "s"}
+          </span>
         </div>
       </div>
 
