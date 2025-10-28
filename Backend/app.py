@@ -85,10 +85,14 @@ def list_documents():
     """List uploaded documents"""
     documents = []
     for doc_id, doc_data in uploaded_documents.items():
+        words_list = doc_data.get('words')
+        stored_word_count = doc_data.get('word_count')
+        if stored_word_count is None and isinstance(words_list, list):
+            stored_word_count = len(words_list)
         documents.append({
             'id': doc_id,
             'filename': doc_data['filename'],
-            'word_count': len(doc_data['words'])
+            'word_count': stored_word_count or 0
         })
     return jsonify({'documents': documents})
 
@@ -139,7 +143,7 @@ def analyze():
             return jsonify({'error': 'Failed to extract text from the document.'}), 400
 
         try:
-            analysis_payload, img_data_url, words = analyze_document(
+            analysis_payload, img_data_url, word_count = analyze_document(
                 text,
                 user_keywords,
                 text_metadata
@@ -153,11 +157,11 @@ def analyze():
         uploaded_documents[doc_id] = {
             'filename': filename,
             'text': text,
-            'words': words,
+            'word_count': word_count,
             'analysis_result': analysis_payload,
             'metadata': text_metadata
         }
-        logging.info(f"Stored document {doc_id} with {len(words)} words")
+        logging.info(f"Stored document {doc_id} with {word_count} words")
 
         response_payload = dict(analysis_payload)
         response_payload.update({
@@ -205,9 +209,12 @@ def search():
                 for doc_id, doc_data in uploaded_documents.items():
                     try:
                         text = doc_data.get('text', '')
-                        words = doc_data.get('words', [])
-                        
-                        if not text or not words:
+                        stored_word_count = doc_data.get('word_count')
+                        if stored_word_count is None:
+                            words_list = doc_data.get('words', [])
+                            stored_word_count = len(words_list) if isinstance(words_list, list) else 0
+
+                        if not text or stored_word_count == 0:
                             logging.warning(f"Document {doc_id} has no text or words")
                             continue
                         

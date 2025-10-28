@@ -209,4 +209,4 @@ def analyze_document(text, user_keywords, text_metadata=None):
         'trendInsights': trend_insights
     }
 
-    return analysis_payload, wordcloud_image, words
+    return analysis_payload, wordcloud_image, total_words

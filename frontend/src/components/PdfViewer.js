@@ -113,7 +113,9 @@ function RightPanel({
 
   const handleSelectDocumentTab = (docId) => {
     setActiveTab(docId);
-    onSelectDocument?.(docId);
+    if (docId !== "upload") {
+      onSelectDocument?.(docId);
+    }
   };
 
   const handleRemoveDocumentTab = (event, docId) => {
@@ -125,6 +127,17 @@ function RightPanel({
     if (activeTab === docId) {
       setActiveTab("upload");
     }
+  };
+
+  const handleAddDocumentsClick = () => {
+    setActiveTab("upload");
+    if (!dropzoneDisabled) {
+      open();
+    }
+  };
+
+  const handleShowUpload = () => {
+    setActiveTab("upload");
   };
 
   const renderUploadArea = () => (
@@ -251,30 +264,61 @@ function RightPanel({
 
   return (
     <div className="right-panel">
-      <div className="viewer-tab-bar">
-        {documents.map((doc) => {
-          const statusClass = `viewer-tab-status-${doc.status || "idle"}`;
-          const isActive = activeTab === doc.id;
-          return (
-            <button
-              key={doc.id}
-              type="button"
-              className={`viewer-tab${isActive ? " viewer-tab-active" : ""} ${statusClass}`}
-              onClick={() => handleSelectDocumentTab(doc.id)}
-              title={doc.name}
-            >
-              <span className="viewer-tab-label">{doc.name}</span>
-              <span
-                className={`viewer-tab-remove viewer-status-${doc.status || "idle"}`}
-                title="Remove document"
-                aria-hidden="true"
-                onClick={(event) => handleRemoveDocumentTab(event, doc.id)}
+      <div className="viewer-topbar">
+        <div className="viewer-tab-bar">
+          <button
+            type="button"
+            className={`viewer-tab viewer-tab-upload${activeTab === "upload" ? " viewer-tab-active" : ""}`}
+            onClick={handleShowUpload}
+            title="Open upload area"
+            disabled={dropzoneDisabled && hasDocuments}
+          >
+            <span className="viewer-tab-label">
+              {hasDocuments ? "Add more PDFs" : "Upload PDFs"}
+            </span>
+          </button>
+          {documents.map((doc) => {
+            const statusClass = `viewer-tab-status-${doc.status || "idle"}`;
+            const isActive = activeTab === doc.id;
+            return (
+              <button
+                key={doc.id}
+                type="button"
+                className={`viewer-tab${isActive ? " viewer-tab-active" : ""} ${statusClass}`}
+                onClick={() => handleSelectDocumentTab(doc.id)}
+                title={doc.name}
               >
-                ×
-              </span>
-            </button>
-          );
-        })}
+                <span className="viewer-tab-label">{doc.name}</span>
+                <span
+                  className="viewer-tab-remove"
+                  title="Remove document"
+                  aria-hidden="true"
+                  onClick={(event) => handleRemoveDocumentTab(event, doc.id)}
+                >
+                  ×
+                </span>
+              </button>
+            );
+          })}
+          {!hasDocuments && (
+            <div className="viewer-topbar-hint">Keine PDFs ausgewählt</div>
+          )}
+        </div>
+        <div className="viewer-topbar-actions">
+          <button
+            type="button"
+            className="viewer-add-button"
+            onClick={handleAddDocumentsClick}
+            disabled={dropzoneDisabled}
+          >
+            PDFs hinzufügen
+          </button>
+          {hasDocuments && (
+            <span className="viewer-counter">
+              {documents.length} PDF{documents.length === 1 ? "" : "s"}
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="viewer-body">
