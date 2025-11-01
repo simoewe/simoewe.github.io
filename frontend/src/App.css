@@ -956,6 +956,10 @@ textarea:focus {
     color: #e2e8f0;
   }
 
+  .code-form input::placeholder {
+    color: rgba(226, 232, 240, 0.7);
+  }
+
   .code-form input:focus {
     border-color: #f472b6;
     box-shadow: 0 0 0 3px rgba(244, 114, 182, 0.3);

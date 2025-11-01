@@ -76,6 +76,27 @@ function App() {
 
   const userKeywordList = useMemo(() => parseKeywordString(keywords), [keywords]);
 
+  const analyzableDocuments = useMemo(
+    () =>
+      documents.filter(
+        (doc) => doc.file && doc.status !== "loading"
+      ),
+    [documents]
+  );
+
+  const remainingDocuments = useMemo(
+    () =>
+      analyzableDocuments.filter(
+        (doc) => doc.status !== "success"
+      ),
+    [analyzableDocuments]
+  );
+
+  const hasCompletedDocuments = useMemo(
+    () => documents.some((doc) => doc.status === "success"),
+    [documents]
+  );
+
   const DEFAULT_ANALYSIS_STEPS = useMemo(() => ([
     { id: 'upload', label: 'Upload & validation' },
     { id: 'extract', label: 'Text extraction' },
@@ -706,9 +727,15 @@ function App() {
       return;
     }
 
-    const docsReadyForAnalysis = documents.filter((doc) => doc.file);
+    const docsReadyForAnalysis = documents.filter(
+      (doc) =>
+        doc.file &&
+        doc.status !== "loading" &&
+        doc.status !== "success"
+    );
+
     if (!docsReadyForAnalysis.length) {
-      setError("No analyzable documents found. Upload PDFs again.");
+      setError("No documents left to analyze. Add new PDFs or restart an individual analysis.");
       return;
     }
 
@@ -725,14 +752,31 @@ function App() {
   const totalDocuments = documents.length;
   const analyzingCount = documents.filter((doc) => doc.status === "loading").length;
   const processedCount = Math.max(0, totalDocuments - analyzingCount);
-  const analyzeButtonDisabled = loading || libraryLoading || totalDocuments === 0;
+  const remainingCount = remainingDocuments.length;
+  const hasDocsToAnalyze = remainingCount > 0;
+  const analyzeButtonDisabled =
+    loading ||
+    libraryLoading ||
+    totalDocuments === 0 ||
+    !hasDocsToAnalyze;
+
   const analyzeButtonLabel = libraryLoading
     ? "Loading document..."
     : loading
       ? `Analyzing${totalDocuments > 1 ? ` (${processedCount}/${totalDocuments})` : "..."}`
-      : totalDocuments > 1
-        ? "Analyze all"
-        : "Analyze";
+      : !hasDocsToAnalyze
+        ? (totalDocuments === 0
+          ? "Analyze"
+          : hasCompletedDocuments
+            ? "All analyzed"
+            : totalDocuments > 1
+              ? "Analyze all"
+              : "Analyze")
+        : hasCompletedDocuments && totalDocuments > 1
+          ? "Analyze remaining"
+          : totalDocuments > 1
+            ? "Analyze all"
+            : "Analyze";
 
   return (
     <div className="app">
