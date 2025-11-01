@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
 
 const formatFileSize = (bytes) => {
@@ -117,13 +117,19 @@ function RightPanel({
     onUploadPanelStateChange?.(activeTab === "upload");
   }, [activeTab, onUploadPanelStateChange]);
 
+  const lastFileDialogTriggerRef = useRef(0);
+
   useEffect(() => {
-    if (!fileDialogTrigger) {
+    if (
+      !fileDialogTrigger ||
+      fileDialogTrigger === lastFileDialogTriggerRef.current
+    ) {
       return;
     }
     if (activeTab === "upload" && !dropzoneDisabled) {
       open();
     }
+    lastFileDialogTriggerRef.current = fileDialogTrigger;
   }, [fileDialogTrigger, activeTab, dropzoneDisabled, open]);
 
   const handleSelectDocumentTab = (docId) => {
