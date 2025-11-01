@@ -287,17 +287,6 @@ function RightPanel({
           )}
         </div>
         <div className="viewer-topbar-actions">
-          {hasDocuments && (
-            <button
-              type="button"
-              className="viewer-add-button"
-              onClick={handleShowUpload}
-              title="Add more PDFs"
-              disabled={dropzoneDisabled}
-            >
-              Add more PDFs
-            </button>
-          )}
           <span className="viewer-counter">
             {documents.length} PDF{documents.length === 1 ? "" : "s"}
           </span>
