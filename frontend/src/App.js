@@ -72,6 +72,8 @@ function App() {
   const [activeFooterModal, setActiveFooterModal] = useState(null);
   const [uploadPanelTrigger, setUploadPanelTrigger] = useState(0);
 
+  const userKeywordList = useMemo(() => parseKeywordString(keywords), [keywords]);
+
   const DEFAULT_ANALYSIS_STEPS = useMemo(() => ([
     { id: 'upload', label: 'Upload & validation' },
     { id: 'extract', label: 'Text extraction' },
@@ -362,8 +364,6 @@ function App() {
     setKeywords(formatKeywordString(normalized));
     setTechnologyFeedback("");
   }, []);
-
-  const userKeywordList = useMemo(() => parseKeywordString(keywords), [keywords]);
 
   useEffect(() => {
     if (!technologyFeedback) return;
