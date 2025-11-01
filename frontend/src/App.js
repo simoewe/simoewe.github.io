@@ -192,44 +192,164 @@ function App() {
     });
   }, [analysisTimersRef, clearDocumentAnalysisTimers, createInitialSteps, updateDocument]);
 
-  const resetDocumentAnalysis = useCallback((docId) => {
+  const handleRemoveAllDocuments = useCallback(() => {
+    setDocuments((prev) => {
+      if (!prev.length) {
+        return prev;
+      }
+      prev.forEach((doc) => {
+        const objectUrl = objectUrlMapRef.current.get(doc.id);
+        if (objectUrl) {
+          URL.revokeObjectURL(objectUrl);
+          objectUrlMapRef.current.delete(doc.id);
+        }
+      });
+      objectUrlMapRef.current.clear();
+      return [];
+    });
+    clearAllDocumentTimers();
+    analysisTimersRef.current.clear();
+    pendingUploadsRef.current = 0;
+    setActiveDocumentId(null);
+    setLoading(false);
+    setUploadingDocuments(false);
+    setError("");
+  }, [clearAllDocumentTimers]);
+
+  const analyzeDocuments = useCallback(async (docsToAnalyze = [], {
+    clearGlobalError = true,
+    snapshotKeywords = false,
+  } = {}) => {
+    const analyzableDocs = docsToAnalyze.filter((doc) => doc && doc.file);
+    if (!analyzableDocs.length) {
+      return;
+    }
+
+    setLoading(true);
+    if (clearGlobalError) {
+      setError("");
+    }
+    if (snapshotKeywords) {
+      setSubmittedKeywords(userKeywordList);
+    }
+
+    const apiUrl = getApiBase();
+    const endpoint = apiUrl ? `${apiUrl}/analyze` : "/analyze";
+    const analysisRunTokens = new Map();
+
+    analyzableDocs.forEach((doc) => {
+      const runToken = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      analysisRunTokens.set(doc.id, runToken);
+      clearDocumentAnalysisTimers(doc.id);
+      updateDocument(doc.id, (current) => ({
+        ...current,
+        status: "loading",
+        analysisResult: null,
+        analysisError: "",
+        analysisProgress: 0,
+        analysisSteps: createInitialSteps(),
+        analysisRunToken: runToken,
+      }));
+      startDocumentAnalysisIndicators(doc.id, runToken);
+    });
+
+    const errors = [];
+
+    await Promise.all(
+      analyzableDocs.map(async (doc) => {
+        const runToken = analysisRunTokens.get(doc.id);
+        try {
+          const formData = new FormData();
+          formData.append("file", doc.file);
+          formData.append("buzzwords", keywords);
+
+          const res = await fetch(endpoint, {
+            method: "POST",
+            body: formData,
+          });
+
+          const contentType = res.headers.get("content-type") || "";
+          if (!contentType.includes("application/json")) {
+            const text = await res.text();
+            throw new Error(text || `Unexpected response (${res.status})`);
+          }
+          const data = await res.json();
+          if (!res.ok || data.error) {
+            throw new Error(data.error || "Analysis request failed.");
+          }
+
+          updateDocument(doc.id, (current) => {
+            if (current.analysisRunToken !== runToken) {
+              return null;
+            }
+            return {
+              status: "success",
+              analysisResult: data,
+              analysisError: "",
+              backendDocumentId: data.document_id || current.backendDocumentId,
+            };
+          });
+        } catch (err) {
+          let shouldReportError = false;
+          updateDocument(doc.id, (current) => {
+            if (current.analysisRunToken !== runToken) {
+              return null;
+            }
+            shouldReportError = true;
+            return {
+              status: "error",
+              analysisResult: null,
+              analysisError: err.message,
+            };
+          });
+          if (shouldReportError) {
+            errors.push(`${doc.name}: ${err.message}`);
+          }
+        } finally {
+          finishDocumentAnalysisIndicators(doc.id, runToken);
+        }
+      })
+    );
+
+    if (errors.length) {
+      setError(
+        `Analysis failed for ${errors.length} document${errors.length === 1 ? "" : "s"}`
+      );
+    } else if (clearGlobalError) {
+      setError("");
+    }
+
+    setLoading(false);
+  }, [
+    clearDocumentAnalysisTimers,
+    createInitialSteps,
+    finishDocumentAnalysisIndicators,
+    keywords,
+    setError,
+    setLoading,
+    setSubmittedKeywords,
+    startDocumentAnalysisIndicators,
+    updateDocument,
+    userKeywordList,
+  ]);
+
+  const restartDocumentAnalysis = useCallback((docId) => {
     if (!docId) {
       return;
     }
-    clearDocumentAnalysisTimers(docId);
-    setDocuments((prev) => {
-      let didReset = false;
-      const next = prev.map((doc) => {
-        if (doc.id !== docId) {
-          return doc;
-        }
-        didReset = true;
-        return {
-          ...doc,
-          status: "idle",
-          analysisResult: null,
-          analysisError: "",
-          analysisProgress: 0,
-          analysisSteps: createInitialSteps(),
-          analysisRunToken: null,
-        };
-      });
-      if (didReset) {
-        const anyLoading = next.some((doc) => doc.status === "loading");
-        if (!anyLoading) {
-          setLoading(false);
-        }
-        setError((prevError) => {
-          if (!prevError) {
-            return prevError;
-          }
-          const remainingErrors = next.some((doc) => doc.status === "error" && doc.analysisError);
-          return remainingErrors ? prevError : "";
-        });
-      }
-      return next;
+    const targetDoc = documents.find((doc) => doc.id === docId);
+    if (!targetDoc) {
+      return;
+    }
+    if (!targetDoc.file) {
+      setError("Document data missing. Please re-upload the PDF to analyze again.");
+      return;
+    }
+    analyzeDocuments([targetDoc], {
+      clearGlobalError: true,
+      snapshotKeywords: true,
     });
-  }, [clearDocumentAnalysisTimers, createInitialSteps, setError, setLoading]);
+  }, [analyzeDocuments, documents, setError]);
 
   const handleKeywordsChange = useCallback((input) => {
     const raw =
@@ -582,105 +702,14 @@ function App() {
       return;
     }
 
-    setLoading(true);
-    setError("");
-    setSubmittedKeywords(userKeywordList);
-
-    const analysisRunTokens = new Map();
-
-    docsReadyForAnalysis.forEach((doc) => {
-      const runToken = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-      analysisRunTokens.set(doc.id, runToken);
-      updateDocument(doc.id, (current) => ({
-        ...current,
-        status: "loading",
-        analysisResult: null,
-        analysisError: "",
-        analysisProgress: 0,
-        analysisSteps: createInitialSteps(),
-        analysisRunToken: runToken,
-      }));
-      startDocumentAnalysisIndicators(doc.id, runToken);
+    await analyzeDocuments(docsReadyForAnalysis, {
+      clearGlobalError: true,
+      snapshotKeywords: true,
     });
-
-    const apiUrl = getApiBase();
-    const endpoint = apiUrl ? `${apiUrl}/analyze` : "/analyze";
-
-    const errors = [];
-
-    await Promise.all(
-      docsReadyForAnalysis.map(async (doc) => {
-        const runToken = analysisRunTokens.get(doc.id);
-        try {
-          const formData = new FormData();
-          formData.append("file", doc.file);
-          formData.append("buzzwords", keywords);
-
-          const res = await fetch(endpoint, {
-            method: "POST",
-            body: formData,
-          });
-
-          const contentType = res.headers.get("content-type") || "";
-          if (!contentType.includes("application/json")) {
-            const text = await res.text();
-            throw new Error(text || `Unexpected response (${res.status})`);
-          }
-          const data = await res.json();
-          if (!res.ok || data.error) {
-            throw new Error(data.error || "Analysis request failed.");
-          }
-
-          updateDocument(doc.id, (current) => {
-            if (current.analysisRunToken !== runToken) {
-              return null;
-            }
-            return {
-              status: "success",
-              analysisResult: data,
-              analysisError: "",
-              backendDocumentId: data.document_id || current.backendDocumentId,
-            };
-          });
-        } catch (err) {
-          let shouldReportError = false;
-          updateDocument(doc.id, (current) => {
-            if (current.analysisRunToken !== runToken) {
-              return null;
-            }
-            shouldReportError = true;
-            return {
-              status: "error",
-              analysisResult: null,
-              analysisError: err.message,
-            };
-          });
-          if (shouldReportError) {
-            errors.push(`${doc.name}: ${err.message}`);
-          }
-        } finally {
-          finishDocumentAnalysisIndicators(doc.id, runToken);
-        }
-      })
-    );
-
-    if (errors.length) {
-      setError(
-        `Analysis failed for ${errors.length} document${errors.length === 1 ? "" : "s"}`
-      );
-    } else {
-      setError("");
-    }
-    setLoading(false);
   }, [
-    createInitialSteps,
+    analyzeDocuments,
     documents,
-    finishDocumentAnalysisIndicators,
-    keywords,
     libraryLoading,
-    startDocumentAnalysisIndicators,
-    updateDocument,
-    userKeywordList,
   ]);
 
   const totalDocuments = documents.length;
@@ -700,6 +729,8 @@ function App() {
       <Header
         onPickFromLibrary={handleLibraryPick}
         onRequestUpload={handleUploadPanelRequest}
+        onRemoveAllSelected={handleRemoveAllDocuments}
+        canRemoveAll={documents.length > 0}
       />
       <LegalNoticeModal
         isOpen={activeFooterModal === "legal"}
@@ -936,10 +967,10 @@ function App() {
                               <div className="analysis-card-actions">
                                 <button
                                   type="button"
-                                  onClick={() => resetDocumentAnalysis(doc.id)}
+                                  onClick={() => restartDocumentAnalysis(doc.id)}
                                   className="analysis-card-action"
                                 >
-                                  Reset analysis
+                                  Restart analysis
                                 </button>
                                 <button
                                   type="button"

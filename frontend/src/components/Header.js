@@ -6,6 +6,8 @@ import UHHLogo from "../UHH_Logo.svg";
 export default function Header({
   onPickFromLibrary,
   onRequestUpload,
+  onRemoveAllSelected,
+  canRemoveAll = false,
 }) {
   const [showLib, setShowLib] = useState(false);
   const [showCodePrompt, setShowCodePrompt] = useState(false);
@@ -102,6 +104,18 @@ export default function Header({
         </div>
 
         <ul className="nav-rechts">
+          {typeof onRemoveAllSelected === "function" && (
+            <li>
+              <button
+                type="button"
+                className="remove-all-button"
+                onClick={onRemoveAllSelected}
+                disabled={!canRemoveAll}
+              >
+                Remove all Selected
+              </button>
+            </li>
+          )}
           {typeof onRequestUpload === "function" && (
             <li>
               <button onClick={onRequestUpload}>Upload</button>
