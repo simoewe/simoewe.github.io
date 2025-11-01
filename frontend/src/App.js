@@ -71,6 +71,8 @@ function App() {
   const [showKeywordModal, setShowKeywordModal] = useState(false);
   const [activeFooterModal, setActiveFooterModal] = useState(null);
   const [uploadPanelTrigger, setUploadPanelTrigger] = useState(0);
+  const [fileDialogTrigger, setFileDialogTrigger] = useState(0);
+  const [isUploadPanelActive, setIsUploadPanelActive] = useState(true);
 
   const userKeywordList = useMemo(() => parseKeywordString(keywords), [keywords]);
 
@@ -562,7 +564,15 @@ function App() {
   }, []);
 
   const handleUploadPanelRequest = useCallback(() => {
-    setUploadPanelTrigger((prev) => prev + 1);
+    if (isUploadPanelActive) {
+      setFileDialogTrigger((prev) => prev + 1);
+    } else {
+      setUploadPanelTrigger((prev) => prev + 1);
+    }
+  }, [isUploadPanelActive]);
+
+  const handleUploadPanelStateChange = useCallback((isActive) => {
+    setIsUploadPanelActive(isActive);
   }, []);
 
   const handleLibraryPick = useCallback(async (selection) => {
@@ -1016,6 +1026,8 @@ function App() {
                   libraryLoading={libraryLoading}
                   uploadingDocuments={uploadingDocuments}
                   uploadPanelTrigger={uploadPanelTrigger}
+                  fileDialogTrigger={fileDialogTrigger}
+                  onUploadPanelStateChange={handleUploadPanelStateChange}
                 />
               </div>
             </div>

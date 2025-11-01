@@ -149,11 +149,15 @@ const TextAnalyzer = ({
   }
 
   if (!analysisResult) {
+    const emptyMessage = documentId
+      ? "PDF successfully loaded. Ready to Analyze"
+      : "Upload a document to begin analysis. Adding your own keywords is optional.";
+
     return (
       <div className="text-analyzer">
         <div className="empty-state">
           <div className="empty-icon">📄</div>
-          <p>Upload a document to begin analysis. Adding your own keywords is optional.</p>
+          <p className="empty-state-text">{emptyMessage}</p>
         </div>
       </div>
     );

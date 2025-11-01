@@ -23,6 +23,8 @@ function RightPanel({
   libraryLoading = false,
   uploadingDocuments = false,
   uploadPanelTrigger = 0,
+  fileDialogTrigger = 0,
+  onUploadPanelStateChange,
 }) {
   const [uploadStatus, setUploadStatus] = useState("");
   const [fileTypeError, setFileTypeError] = useState("");
@@ -110,6 +112,19 @@ function RightPanel({
     activeTab !== "upload"
       ? documents.find((doc) => doc.id === activeTab)
       : null;
+
+  useEffect(() => {
+    onUploadPanelStateChange?.(activeTab === "upload");
+  }, [activeTab, onUploadPanelStateChange]);
+
+  useEffect(() => {
+    if (!fileDialogTrigger) {
+      return;
+    }
+    if (activeTab === "upload" && !dropzoneDisabled) {
+      open();
+    }
+  }, [fileDialogTrigger, activeTab, dropzoneDisabled, open]);
 
   const handleSelectDocumentTab = (docId) => {
     setActiveTab(docId);

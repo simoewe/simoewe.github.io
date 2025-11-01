@@ -79,6 +79,10 @@
   text-align: center;
 }
 
+.empty-state-text {
+  color: #111827;
+}
+
 .loading-spinner {
   width: 40px;
   height: 40px;
