@@ -124,9 +124,6 @@ const TextAnalyzer = ({
     const clampedProgress = Math.max(0, Math.min(analysisProgress, 100));
     return (
       <div className="text-analyzer">
-        <div className="analyzer-header">
-          <h2>Analysis Results</h2>
-        </div>
         <div className="loading-container">
           <div className="loading-spinner"></div>
           <p>Analyzing your document...</p>
@@ -154,9 +151,6 @@ const TextAnalyzer = ({
   if (!analysisResult) {
     return (
       <div className="text-analyzer">
-        <div className="analyzer-header">
-          <h2>Analysis Results</h2>
-        </div>
         <div className="empty-state">
           <div className="empty-icon">📄</div>
           <p>Upload a document to begin analysis. Adding your own keywords is optional.</p>
@@ -168,9 +162,6 @@ const TextAnalyzer = ({
   if (analysisResult.error) {
     return (
       <div className="text-analyzer">
-        <div className="analyzer-header">
-          <h2>Analysis Results</h2>
-        </div>
         <div className="error-state">
           <div className="error-icon">⚠️</div>
           <p className="error">{analysisResult.error}</p>
@@ -229,7 +220,6 @@ const TextAnalyzer = ({
   return (
     <div className="text-analyzer">
       <div className="analyzer-header">
-        <h2>Analysis Results</h2>
         <div className="tab-navigation">
           {tabs.map(tab => (
             <button

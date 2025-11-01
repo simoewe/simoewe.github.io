@@ -287,15 +287,17 @@ function RightPanel({
           )}
         </div>
         <div className="viewer-topbar-actions">
-          <button
-            type="button"
-            className="viewer-add-button"
-            onClick={handleShowUpload}
-            title="Open upload area"
-            disabled={dropzoneDisabled && hasDocuments}
-          >
-            {hasDocuments ? "Add more PDFs" : "Upload PDFs"}
-          </button>
+          {!hasDocuments && (
+            <button
+              type="button"
+              className="viewer-add-button"
+              onClick={handleShowUpload}
+              title="Open upload area"
+              disabled={dropzoneDisabled}
+            >
+              Upload PDFs
+            </button>
+          )}
           <span className="viewer-counter">
             {documents.length} PDF{documents.length === 1 ? "" : "s"}
           </span>
