@@ -2890,3 +2890,46 @@ textarea:focus {
   color: #b91c1c;
   font-size: 13px;
 }
+
+@media (prefers-color-scheme: dark) {
+  .inner-container.analysis-panel,
+  .inner-container.full.analysis-panel {
+    background: #ffffff;
+    border-color: #e0e0e0;
+    box-shadow: 0 16px 32px rgba(15, 23, 42, 0.2);
+  }
+
+  .analysis-panel {
+    background: #ffffff;
+    border-color: #e0e0e0;
+    color: #0f172a;
+  }
+
+  .analysis-panel-content {
+    background: #ffffff;
+    color: inherit;
+  }
+
+  .analysis-toolbar {
+    border-color: #e2e8f0;
+    background: linear-gradient(135deg, rgba(226, 0, 26, 0.08), rgba(59, 130, 246, 0.08));
+  }
+
+  .analysis-toolbar-copy h2 {
+    color: #0f172a;
+  }
+
+  .analysis-toolbar-copy p {
+    color: #475569;
+  }
+
+  .analysis-keyword-button {
+    border-color: #1d4ed8;
+    background: #eef2ff;
+    color: #1d4ed8;
+  }
+
+  .analysis-keyword-button:hover {
+    box-shadow: 0 12px 24px rgba(29, 78, 216, 0.2);
+  }
+}

@@ -121,7 +121,7 @@ function App() {
     });
   }, [clearDocumentAnalysisTimers]);
 
-  const startDocumentAnalysisIndicators = useCallback((docId) => {
+  const startDocumentAnalysisIndicators = useCallback((docId, runToken) => {
     clearDocumentAnalysisTimers(docId);
     updateDocument(docId, (doc) => ({
       analysisProgress: 5,
@@ -167,19 +167,69 @@ function App() {
     analysisTimersRef.current.set(docId, {
       interval: intervalId,
       timeouts,
+      runToken,
     });
   }, [DEFAULT_ANALYSIS_STEPS, clearDocumentAnalysisTimers, updateDocument]);
 
-  const finishDocumentAnalysisIndicators = useCallback((docId) => {
+  const finishDocumentAnalysisIndicators = useCallback((docId, expectedToken) => {
+    const timerEntry = analysisTimersRef.current.get(docId);
+    if (expectedToken && timerEntry?.runToken && timerEntry.runToken !== expectedToken) {
+      return;
+    }
     clearDocumentAnalysisTimers(docId);
-    updateDocument(docId, (doc) => ({
-      analysisProgress: 100,
-      analysisSteps: (doc.analysisSteps || createInitialSteps()).map((step) => ({
-        ...step,
-        status: "completed",
-      })),
-    }));
-  }, [clearDocumentAnalysisTimers, createInitialSteps, updateDocument]);
+    updateDocument(docId, (doc) => {
+      if (expectedToken && doc.analysisRunToken !== expectedToken) {
+        return null;
+      }
+      return {
+        analysisRunToken: null,
+        analysisProgress: 100,
+        analysisSteps: (doc.analysisSteps || createInitialSteps()).map((step) => ({
+          ...step,
+          status: "completed",
+        })),
+      };
+    });
+  }, [analysisTimersRef, clearDocumentAnalysisTimers, createInitialSteps, updateDocument]);
+
+  const resetDocumentAnalysis = useCallback((docId) => {
+    if (!docId) {
+      return;
+    }
+    clearDocumentAnalysisTimers(docId);
+    setDocuments((prev) => {
+      let didReset = false;
+      const next = prev.map((doc) => {
+        if (doc.id !== docId) {
+          return doc;
+        }
+        didReset = true;
+        return {
+          ...doc,
+          status: "idle",
+          analysisResult: null,
+          analysisError: "",
+          analysisProgress: 0,
+          analysisSteps: createInitialSteps(),
+          analysisRunToken: null,
+        };
+      });
+      if (didReset) {
+        const anyLoading = next.some((doc) => doc.status === "loading");
+        if (!anyLoading) {
+          setLoading(false);
+        }
+        setError((prevError) => {
+          if (!prevError) {
+            return prevError;
+          }
+          const remainingErrors = next.some((doc) => doc.status === "error" && doc.analysisError);
+          return remainingErrors ? prevError : "";
+        });
+      }
+      return next;
+    });
+  }, [clearDocumentAnalysisTimers, createInitialSteps, setError, setLoading]);
 
   const handleKeywordsChange = useCallback((input) => {
     const raw =
@@ -341,6 +391,7 @@ function App() {
         analysisError: "",
         analysisProgress: 0,
         analysisSteps: createInitialSteps(),
+        analysisRunToken: null,
         backendDocumentId: null,
       };
     });
@@ -444,6 +495,7 @@ function App() {
             analysisError: "",
             analysisProgress: 0,
             analysisSteps: createInitialSteps(),
+            analysisRunToken: null,
             backendDocumentId: null,
           });
         } catch (fetchErr) {
@@ -534,15 +586,21 @@ function App() {
     setError("");
     setSubmittedKeywords(userKeywordList);
 
+    const analysisRunTokens = new Map();
+
     docsReadyForAnalysis.forEach((doc) => {
-      updateDocument(doc.id, {
+      const runToken = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      analysisRunTokens.set(doc.id, runToken);
+      updateDocument(doc.id, (current) => ({
+        ...current,
         status: "loading",
         analysisResult: null,
         analysisError: "",
         analysisProgress: 0,
         analysisSteps: createInitialSteps(),
-      });
-      startDocumentAnalysisIndicators(doc.id);
+        analysisRunToken: runToken,
+      }));
+      startDocumentAnalysisIndicators(doc.id, runToken);
     });
 
     const apiUrl = getApiBase();
@@ -552,6 +610,7 @@ function App() {
 
     await Promise.all(
       docsReadyForAnalysis.map(async (doc) => {
+        const runToken = analysisRunTokens.get(doc.id);
         try {
           const formData = new FormData();
           formData.append("file", doc.file);
@@ -572,21 +631,35 @@ function App() {
             throw new Error(data.error || "Analysis request failed.");
           }
 
-          updateDocument(doc.id, {
-            status: "success",
-            analysisResult: data,
-            analysisError: "",
-            backendDocumentId: data.document_id || doc.backendDocumentId,
+          updateDocument(doc.id, (current) => {
+            if (current.analysisRunToken !== runToken) {
+              return null;
+            }
+            return {
+              status: "success",
+              analysisResult: data,
+              analysisError: "",
+              backendDocumentId: data.document_id || current.backendDocumentId,
+            };
           });
         } catch (err) {
-          errors.push(`${doc.name}: ${err.message}`);
-          updateDocument(doc.id, {
-            status: "error",
-            analysisResult: null,
-            analysisError: err.message,
+          let shouldReportError = false;
+          updateDocument(doc.id, (current) => {
+            if (current.analysisRunToken !== runToken) {
+              return null;
+            }
+            shouldReportError = true;
+            return {
+              status: "error",
+              analysisResult: null,
+              analysisError: err.message,
+            };
           });
+          if (shouldReportError) {
+            errors.push(`${doc.name}: ${err.message}`);
+          }
         } finally {
-          finishDocumentAnalysisIndicators(doc.id);
+          finishDocumentAnalysisIndicators(doc.id, runToken);
         }
       })
     );
@@ -861,6 +934,13 @@ function App() {
                                 </div>
                               </div>
                               <div className="analysis-card-actions">
+                                <button
+                                  type="button"
+                                  onClick={() => resetDocumentAnalysis(doc.id)}
+                                  className="analysis-card-action"
+                                >
+                                  Reset analysis
+                                </button>
                                 <button
                                   type="button"
                                   onClick={() => handleDocumentSelection(doc.id)}

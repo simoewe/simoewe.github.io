@@ -259,17 +259,6 @@ function RightPanel({
     <div className="right-panel">
       <div className="viewer-topbar">
         <div className="viewer-tab-bar">
-          <button
-            type="button"
-            className={`viewer-tab viewer-tab-upload${activeTab === "upload" ? " viewer-tab-active" : ""}`}
-            onClick={handleShowUpload}
-            title="Open upload area"
-            disabled={dropzoneDisabled && hasDocuments}
-          >
-            <span className="viewer-tab-label">
-              {hasDocuments ? "Add more PDFs" : "Upload PDFs"}
-            </span>
-          </button>
           {documents.map((doc) => {
             const statusClass = `viewer-tab-status-${doc.status || "idle"}`;
             const isActive = activeTab === doc.id;
@@ -298,6 +287,15 @@ function RightPanel({
           )}
         </div>
         <div className="viewer-topbar-actions">
+          <button
+            type="button"
+            className="viewer-add-button"
+            onClick={handleShowUpload}
+            title="Open upload area"
+            disabled={dropzoneDisabled && hasDocuments}
+          >
+            {hasDocuments ? "Add more PDFs" : "Upload PDFs"}
+          </button>
           <span className="viewer-counter">
             {documents.length} PDF{documents.length === 1 ? "" : "s"}
           </span>
