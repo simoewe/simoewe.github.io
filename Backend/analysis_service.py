@@ -32,6 +32,8 @@ except ImportError:  # Fallback when modules are imported without package contex
 
 _WORD_LIMIT_SENTINEL = object()
 SENTIMENT_CHAR_LIMIT = 20000
+REGEX_CHUNK_SIZE = 250_000
+REGEX_CHUNK_OVERLAP = 1_000
 
 
 def build_keyword_specs(user_keywords):
@@ -207,6 +209,31 @@ def generate_wordcloud(freq):
     return f"data:image/png;base64,{img_base64}"
 
 
+def iter_keyword_matches(pattern, text, chunk_size=REGEX_CHUNK_SIZE, overlap=REGEX_CHUNK_OVERLAP):
+    """
+    Yield (start, end) offsets for regex matches while scanning the text in chunks.
+    """
+    if not pattern or not text:
+        return
+
+    text_length = len(text)
+    if text_length <= chunk_size:
+        for match in pattern.finditer(text):
+            yield match.start(), match.end()
+        return
+
+    start = 0
+    safe_overlap = max(0, overlap)
+    while start < text_length:
+        end = min(text_length, start + chunk_size)
+        chunk = text[start:end]
+        for match in pattern.finditer(chunk):
+            yield start + match.start(), start + match.end()
+        if end >= text_length:
+            break
+        start = max(0, end - safe_overlap)
+
+
 def analyze_sentiment_safe(text):
     """
     Run TextBlob sentiment analysis on a bounded slice to avoid OOM on very large documents.
@@ -309,18 +336,18 @@ def analyze_document(text, user_keywords, text_metadata=None, word_limit_overrid
         match_count = 0
         contexts = []
         if pattern:
-            for match in pattern.finditer(text_lower):
+            for match_start, match_end in iter_keyword_matches(pattern, text_lower):
                 match_count += 1
                 if len(contexts) >= 5:
                     continue
-                snippet = build_snippet(processed_text, match.start(), match.end(), word_spans, window=window)
+                snippet = build_snippet(processed_text, match_start, match_end, word_spans, window=window)
                 if snippet:
                     contexts.append({
                         'snippet': snippet,
-                        'page': find_page_for_offset(match.start()),
-                        'start': match.start(),
-                        'end': match.end(),
-                        'match_text': processed_text[match.start():match.end()].strip()
+                        'page': find_page_for_offset(match_start),
+                        'start': match_start,
+                        'end': match_end,
+                        'match_text': processed_text[match_start:match_end].strip()
                     })
         freq[label] = match_count
 
