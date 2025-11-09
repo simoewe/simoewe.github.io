@@ -14,16 +14,20 @@ try:
     from .constants import (
         DEFAULT_TREND_KEYWORDS,
         MAX_WORDS_ANALYSIS,
+        STRIP_CHARS,
     )
     from .keyword_utils import build_snippet, compile_keyword_pattern, tokenize_keyword
     from .trend_analysis import analyze_trends
+    from .sampling_utils import select_evenly_spaced_indices
 except ImportError:  # Fallback when modules are imported without package context
     from constants import (
         DEFAULT_TREND_KEYWORDS,
         MAX_WORDS_ANALYSIS,
+        STRIP_CHARS,
     )
     from keyword_utils import build_snippet, compile_keyword_pattern, tokenize_keyword
     from trend_analysis import analyze_trends
+    from sampling_utils import select_evenly_spaced_indices
 
 
 def build_keyword_specs(user_keywords):
@@ -48,6 +52,137 @@ def build_keyword_specs(user_keywords):
     return keyword_specs
 
 
+def tokenize_lower_text(lower_text):
+    return [
+        token
+        for token in (
+            word.strip(STRIP_CHARS)
+            for word in lower_text.split()
+        )
+        if token
+    ]
+
+
+def truncate_text_basic(text, word_limit):
+    if word_limit is None or word_limit <= 0:
+        return text
+    tokens = text.split()
+    if len(tokens) <= word_limit:
+        return text
+    return " ".join(tokens[:word_limit])
+
+
+def reduce_text_to_word_limit(text, metadata, word_limit, original_word_count):
+    """
+    Reduce the amount of text that flows into the analysis while keeping coverage across the document.
+    """
+    if not text or word_limit is None or word_limit <= 0:
+        return text, []
+
+    pages = (metadata or {}).get('pages') or []
+    if not pages:
+        return truncate_text_basic(text, word_limit), []
+
+    page_count = len(pages)
+    if page_count == 0:
+        return truncate_text_basic(text, word_limit), []
+
+    avg_words_per_page = max(1, original_word_count // max(page_count, 1))
+    target_pages = max(1, min(page_count, (word_limit // avg_words_per_page) + 2))
+    candidate_indices = select_evenly_spaced_indices(page_count, target_pages)
+    used_indices = set()
+    sampled_page_numbers = []
+    remaining_words = word_limit
+    segments = []
+
+    def add_page_segment(page_index):
+        nonlocal remaining_words
+        if remaining_words <= 0 or page_index in used_indices:
+            return
+        if page_index < 0 or page_index >= page_count:
+            return
+        used_indices.add(page_index)
+        page_entry = pages[page_index] or {}
+        start = max(0, page_entry.get('start', 0))
+        end = max(start, page_entry.get('end', start))
+        segment = text[start:end].strip()
+        if not segment:
+            return
+        words_in_segment = segment.split()
+        if not words_in_segment:
+            return
+
+        if len(words_in_segment) > remaining_words:
+            trimmed_segment = " ".join(words_in_segment[:remaining_words])
+            segments.append(trimmed_segment)
+            remaining_words = 0
+        else:
+            segments.append(segment)
+            remaining_words -= len(words_in_segment)
+        page_number = page_entry.get('number')
+        if page_number is not None:
+            sampled_page_numbers.append(page_number)
+
+    for idx in candidate_indices:
+        add_page_segment(idx)
+        if remaining_words <= 0:
+            break
+
+    if remaining_words > 0:
+        for idx in range(page_count):
+            if remaining_words <= 0:
+                break
+            add_page_segment(idx)
+
+    if not segments:
+        return truncate_text_basic(text, word_limit), []
+
+    compact_text = "\n\n".join(segments).strip()
+    if not compact_text:
+        return truncate_text_basic(text, word_limit), sampled_page_numbers
+    return compact_text, sampled_page_numbers
+
+
+def prepare_text_for_analysis(text, metadata, word_limit):
+    base_text = text or ""
+    lower_text_full = base_text.lower()
+    words_full = tokenize_lower_text(lower_text_full)
+    original_word_count = len(words_full)
+    processed_text = base_text
+    processed_lower = lower_text_full
+    processed_words = words_full
+    sampled_pages = []
+    truncated = False
+
+    if word_limit is not None and word_limit > 0 and original_word_count > word_limit:
+        truncated_text, sampled_pages = reduce_text_to_word_limit(
+            base_text,
+            metadata,
+            word_limit,
+            original_word_count
+        )
+        processed_text = truncated_text
+        processed_lower = processed_text.lower()
+        processed_words = tokenize_lower_text(processed_lower)
+        truncated = True
+        logging.info(
+            "Applied word budget: reduced from %s to %s words (limit %s)",
+            original_word_count,
+            len(processed_words),
+            word_limit
+        )
+
+    budget_info = {
+        "limit": word_limit,
+        "original_word_count": original_word_count,
+        "processed_word_count": len(processed_words),
+        "truncated": truncated,
+        "sampled_pages": sampled_pages
+    }
+
+    return processed_text, processed_lower, processed_words, budget_info
+
+
 def generate_wordcloud(freq):
     nonzero_freq = {k: v for k, v in freq.items() if v > 0}
     if not nonzero_freq:
@@ -68,17 +203,13 @@ def generate_wordcloud(freq):
 
 
 def analyze_document(text, user_keywords, text_metadata=None):
-    text_lower = text.lower()
-    words = [w.strip(".,!?;:()[]") for w in text_lower.split() if w.strip(".,!?;:()[]")]
-    total_words = len(words)
-
     word_limit = MAX_WORDS_ANALYSIS
-    if word_limit is not None and total_words > word_limit:
-        logging.info(f"Document rejected due to length: {total_words} words")
-        raise ValueError(
-            f'Document too large (limit {word_limit:,} words). '
-            'Please choose a shorter file.'
-        )
+    processed_text, text_lower, words, budget_info = prepare_text_for_analysis(
+        text,
+        text_metadata,
+        word_limit
+    )
+    total_words = len(words)
 
     keyword_specs = build_keyword_specs(user_keywords)
 
@@ -99,7 +230,7 @@ def analyze_document(text, user_keywords, text_metadata=None):
             add_token(token, idx)
 
     word_pattern = re.compile(r'\b\w[\w\-_/]*\b')
-    word_spans = list(word_pattern.finditer(text))
+    word_spans = list(word_pattern.finditer(processed_text))
 
     freq = {}
     kwic_results = {}
@@ -141,14 +272,14 @@ def analyze_document(text, user_keywords, text_metadata=None):
 
         contexts = []
         for match in matches:
-            snippet = build_snippet(text, match.start(), match.end(), word_spans, window=window)
+            snippet = build_snippet(processed_text, match.start(), match.end(), word_spans, window=window)
             if snippet:
                 contexts.append({
                     'snippet': snippet,
                     'page': find_page_for_offset(match.start()),
                     'start': match.start(),
                     'end': match.end(),
-                    'match_text': text[match.start():match.end()].strip()
+                    'match_text': processed_text[match.start():match.end()].strip()
                 })
             if len(contexts) >= 5:
                 break
@@ -175,13 +306,13 @@ def analyze_document(text, user_keywords, text_metadata=None):
         for label in freq
     }
 
-    blob = TextBlob(text)
+    blob = TextBlob(processed_text)
     sentiment = {
         'polarity': blob.sentiment.polarity,
         'subjectivity': blob.sentiment.subjectivity
     }
 
-    sentences = re.split(r'(?<=[.!?])\s+', text)
+    sentences = re.split(r'(?<=[.!?])\s+', processed_text)
     num_sentences = len([s for s in sentences if s.strip()])
     num_syllables = sum(len(w) // 3 for w in words)
     asl = total_words / max(1, num_sentences)
@@ -198,6 +329,31 @@ def analyze_document(text, user_keywords, text_metadata=None):
 
     wordcloud_image = generate_wordcloud(freq)
 
+    page_selection_meta = (text_metadata or {}).get('page_selection') if text_metadata else None
+    page_sampling_summary = None
+    if isinstance(page_selection_meta, dict) and page_selection_meta:
+        page_sampling_summary = {
+            'totalPages': page_selection_meta.get('total_pages'),
+            'processedPages': page_selection_meta.get('processed_pages'),
+            'limit': page_selection_meta.get('limit'),
+            'sampled': page_selection_meta.get('sampled'),
+            'strategy': page_selection_meta.get('strategy'),
+            'reason': page_selection_meta.get('reason')
+        }
+
+    sampled_pages = budget_info.get('sampled_pages') or []
+    max_sampled_pages = sampled_pages[:50] if isinstance(sampled_pages, list) else []
+    processing_summary = {
+        'wordBudget': {
+            'limit': budget_info.get('limit'),
+            'originalWords': budget_info.get('original_word_count'),
+            'processedWords': budget_info.get('processed_word_count'),
+            'truncated': budget_info.get('truncated'),
+            'sampledPages': max_sampled_pages
+        },
+        'pageSampling': page_sampling_summary
+    }
+
     analysis_payload = {
         'frequencies': freq,
         'densities': density,
@@ -206,7 +362,8 @@ def analyze_document(text, user_keywords, text_metadata=None):
         'sentiment': sentiment,
         'readability': readability,
         'trends': trend_results,
-        'trendInsights': trend_insights
+        'trendInsights': trend_insights,
+        'processingSummary': processing_summary
     }
 
     return analysis_payload, wordcloud_image, total_words

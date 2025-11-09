@@ -26,6 +26,7 @@ try:
         PDF_PDFMINER_MAX_BYTES,
         PDF_PDFMINER_MAX_PAGES,
     )
+    from .sampling_utils import select_evenly_spaced_indices
 except ImportError:
     from constants import (
         ALLOWED_EXTENSIONS,
@@ -34,6 +35,39 @@ except ImportError:
         PDF_PDFMINER_MAX_BYTES,
         PDF_PDFMINER_MAX_PAGES,
     )
+    from sampling_utils import select_evenly_spaced_indices
+
+
+def build_page_selection(total_pages, page_limit):
+    """Return indices plus metadata about how many pages are processed."""
+    if total_pages is None or total_pages <= 0:
+        return [], {
+            "total_pages": total_pages or 0,
+            "processed_pages": 0,
+            "limit": page_limit,
+            "sampled": False,
+            "strategy": "none"
+        }
+
+    if page_limit is None or page_limit <= 0 or page_limit >= total_pages:
+        indices = list(range(total_pages))
+        return indices, {
+            "total_pages": total_pages,
+            "processed_pages": len(indices),
+            "limit": page_limit,
+            "sampled": False,
+            "strategy": "all"
+        }
+
+    indices = select_evenly_spaced_indices(total_pages, page_limit)
+    return indices, {
+        "total_pages": total_pages,
+        "processed_pages": len(indices),
+        "limit": page_limit,
+        "sampled": True,
+        "strategy": "even_sampling",
+        "reason": "page_limit"
+    }
 
 
 def allowed_file(filename):
@@ -111,18 +145,33 @@ def optimize_pdf_bytes(file_bytes):
     return file_bytes
 
 
-def extract_text_pymupdf(file_bytes, reason_label="preferred"):
+def extract_text_pymupdf(file_bytes, reason_label="preferred", page_limit=None):
     """Extract text using PyMuPDF for complex PDFs."""
     if not fitz or not isinstance(file_bytes, (bytes, bytearray)):
-        return None, None, None
+        return None, None, None, {
+            "total_pages": 0,
+            "processed_pages": 0,
+            "limit": page_limit,
+            "sampled": False,
+            "strategy": "none"
+        }
 
     doc = None
     try:
         doc = fitz.open(stream=file_bytes, filetype="pdf")
         page_count = doc.page_count
+        selected_indices, selection_summary = build_page_selection(page_count, page_limit)
+        if selection_summary.get("sampled"):
+            logging.info(
+                "PyMuPDF extraction sampling %s of %s pages due to limit %s",
+                selection_summary.get("processed_pages"),
+                selection_summary.get("total_pages"),
+                selection_summary.get("limit")
+            )
         text_buffer = io.StringIO()
         page_spans = []
-        for page_index, page in enumerate(doc):
+        for page_index in selected_indices:
+            page = doc.load_page(page_index)
             page_text = page.get_text("text") or ""
             start_pos = text_buffer.tell()
             if page_text:
@@ -133,21 +182,27 @@ def extract_text_pymupdf(file_bytes, reason_label="preferred"):
                 "start": start_pos,
                 "end": end_pos
             })
-            if page_index < page_count - 1:
+            if page_index != selected_indices[-1]:
                 text_buffer.write("\n")
         extracted = text_buffer.getvalue()
         if extracted:
             logging.info(
                 "PyMuPDF extraction (%s) succeeded on %s pages",
                 reason_label,
-                page_count
+                selection_summary.get("processed_pages", page_count)
             )
-            return extracted, page_count, page_spans
+            return extracted, page_count, page_spans, selection_summary
         logging.warning("PyMuPDF extraction (%s) returned empty text", reason_label)
-        return None, page_count, page_spans
+        return None, page_count, page_spans, selection_summary
     except Exception as pymupdf_error:
         logging.warning(f"PyMuPDF extraction ({reason_label}) failed: {pymupdf_error}")
-        return None, getattr(doc, "page_count", None), None
+        return None, getattr(doc, "page_count", None), None, {
+            "total_pages": getattr(doc, "page_count", None) or 0,
+            "processed_pages": 0,
+            "limit": page_limit,
+            "sampled": False,
+            "strategy": "failed"
+        }
     finally:
         if doc is not None:
             doc.close()
@@ -176,23 +231,23 @@ def extract_text_pdf(file_stream, return_metadata=False):
         page_limit = MAX_PDF_PAGES
 
         if fitz:
-            pymupdf_text, pymupdf_pages, pymupdf_page_spans = extract_text_pymupdf(
+            (
+                pymupdf_text,
+                pymupdf_pages,
+                pymupdf_page_spans,
+                pymupdf_selection
+            ) = extract_text_pymupdf(
                 original_file_bytes,
-                reason_label="initial"
+                reason_label="initial",
+                page_limit=page_limit
             )
-            if (
-                page_limit is not None
-                and pymupdf_pages
-                and pymupdf_pages > page_limit
-            ):
-                logging.info(
-                    "PDF rejected due to page limit (PyMuPDF count): %s pages",
-                    pymupdf_pages
-                )
-                raise ValueError(f"PDF exceeds the page limit of {page_limit:,} pages.")
             if pymupdf_text:
+                metadata_payload = {
+                    "pages": pymupdf_page_spans or [],
+                    "page_selection": pymupdf_selection
+                }
                 if return_metadata:
-                    return pymupdf_text, {"pages": pymupdf_page_spans or []}
+                    return pymupdf_text, metadata_payload
                 return pymupdf_text
 
         file_bytes = optimize_pdf_bytes(file_bytes)
@@ -215,33 +270,41 @@ def extract_text_pdf(file_stream, return_metadata=False):
                 raise ValueError("Failed to decrypt encrypted PDF")
 
         page_count = len(reader.pages)
-        if page_limit is not None and page_count > page_limit:
-            logging.info(f"PDF rejected due to page limit: {page_count} pages")
-            raise ValueError(f"PDF exceeds the page limit of {page_limit:,} pages.")
-
+        selected_indices, selection_summary = build_page_selection(page_count, page_limit)
+        if selection_summary.get("sampled"):
+            logging.info(
+                "Processing %s of %s pages due to configured limit %s",
+                selection_summary.get("processed_pages"),
+                selection_summary.get("total_pages"),
+                selection_summary.get("limit")
+            )
         text_buffer = io.StringIO()
         page_spans = []
-        for page_num, page in enumerate(reader.pages):
+        for logical_idx, page_index in enumerate(selected_indices):
+            page = reader.pages[page_index]
             start_pos = text_buffer.tell()
             page_text = ''
             try:
                 page_text = page.extract_text() or ''
             except Exception as page_error:
-                logging.error(f"PDF page {page_num+1} extraction failed: {page_error}")
+                logging.error(f"PDF page {page_index+1} extraction failed: {page_error}")
             if page_text:
                 text_buffer.write(page_text)
             end_pos = text_buffer.tell()
             page_spans.append({
-                "number": page_num + 1,
+                "number": page_index + 1,
                 "start": start_pos,
                 "end": end_pos
             })
-            if page_num < page_count - 1:
+            if logical_idx < len(selected_indices) - 1:
                 text_buffer.write('\n')
         text = text_buffer.getvalue()
         if text and text.strip():
             if return_metadata:
-                return text, {"pages": page_spans}
+                return text, {
+                    "pages": page_spans,
+                    "page_selection": selection_summary
+                }
             return text
 
         logging.info("PyPDF2 returned little/no text; attempting pdfminer fallback")
@@ -258,17 +321,26 @@ def extract_text_pdf(file_stream, return_metadata=False):
                 if miner_text and miner_text.strip():
                     logging.info("pdfminer extraction successful")
                     if return_metadata:
-                        return miner_text, {"pages": page_spans}
+                        return miner_text, {
+                            "pages": page_spans,
+                            "page_selection": selection_summary
+                        }
                     return miner_text
                 logging.warning("pdfminer extraction yielded empty text")
                 result_text = miner_text or text
                 if return_metadata:
-                    return result_text, {"pages": page_spans}
+                    return result_text, {
+                        "pages": page_spans,
+                        "page_selection": selection_summary
+                    }
                 return result_text
             except Exception as miner_error:
                 logging.error(f"pdfminer extraction failed: {miner_error}")
                 if return_metadata:
-                    return text, {"pages": page_spans}
+                    return text, {
+                        "pages": page_spans,
+                        "page_selection": selection_summary
+                    }
                 return text
 
         if not pdfminer_extract_text:
@@ -280,7 +352,10 @@ def extract_text_pdf(file_stream, return_metadata=False):
                 page_count
             )
         if return_metadata:
-            return text, {"pages": page_spans}
+            return text, {
+                "pages": page_spans,
+                "page_selection": selection_summary
+            }
         return text
     except Exception as e:
         logging.error(f"PDF extraction failed: {e}")

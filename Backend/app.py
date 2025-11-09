@@ -122,7 +122,14 @@ def analyze():
                         'number': 1,
                         'start': 0,
                         'end': len(extracted_text or '')
-                    }]
+                    }],
+                    'page_selection': {
+                        'total_pages': 1,
+                        'processed_pages': 1,
+                        'limit': None,
+                        'sampled': False,
+                        'strategy': 'all'
+                    }
                 }
 
             if filename.endswith('.pdf'):
@@ -167,7 +174,8 @@ def analyze():
         response_payload.update({
             'image': img_data_url,
             'document_id': doc_id,
-            'pageMap': (text_metadata or {}).get('pages', [])
+            'pageMap': (text_metadata or {}).get('pages', []),
+            'pageSelection': (text_metadata or {}).get('page_selection')
         })
 
         return jsonify(response_payload)

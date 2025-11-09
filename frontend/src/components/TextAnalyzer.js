@@ -213,6 +213,32 @@ const TextAnalyzer = ({
       })
     : [];
 
+  const processingSummary = analysisResult.processingSummary || {};
+  const wordBudget = processingSummary.wordBudget || {};
+  const pageSampling = processingSummary.pageSampling || {};
+  const formatNumber = (value) =>
+    typeof value === 'number' ? value.toLocaleString() : value;
+  const showWordBudgetNotice =
+    Boolean(
+      wordBudget &&
+      wordBudget.truncated &&
+      typeof wordBudget.originalWords === 'number' &&
+      typeof wordBudget.processedWords === 'number'
+    );
+  const showPageSamplingNotice =
+    Boolean(
+      pageSampling &&
+      pageSampling.sampled &&
+      typeof pageSampling.totalPages === 'number' &&
+      typeof pageSampling.processedPages === 'number'
+    );
+  const wordBudgetNoticeText = showWordBudgetNotice
+    ? `Analyzed ${formatNumber(wordBudget.processedWords)} of ${formatNumber(wordBudget.originalWords)} words${typeof wordBudget.limit === 'number' ? ` (limit ${formatNumber(wordBudget.limit)})` : ''}`
+    : '';
+  const pageSamplingNoticeText = showPageSamplingNotice
+    ? `Sampled ${formatNumber(pageSampling.processedPages)} of ${formatNumber(pageSampling.totalPages)} pages${typeof pageSampling.limit === 'number' ? ` (limit ${formatNumber(pageSampling.limit)})` : ''}`
+    : '';
+
   const tabs = [
     { id: 'overview', label: 'Overview', icon: '📊' },
     { id: 'wordcloud', label: 'Word Cloud', icon: '☁️' },
@@ -236,6 +262,22 @@ const TextAnalyzer = ({
             </button>
           ))}
         </div>
+        {(showWordBudgetNotice || showPageSamplingNotice) && (
+          <div className="processing-notice">
+            {showWordBudgetNotice && (
+              <div className="processing-pill">
+                <strong>Word budget</strong>
+                <span>{wordBudgetNoticeText}</span>
+              </div>
+            )}
+            {showPageSamplingNotice && (
+              <div className="processing-pill">
+                <strong>Page sampling</strong>
+                <span>{pageSamplingNoticeText}</span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="tab-content">
@@ -528,6 +570,56 @@ const TextAnalyzer = ({
                       </div>
                       <span className="sentiment-value">{sentiment.subjectivity.toFixed(3)}</span>
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {(showWordBudgetNotice || showPageSamplingNotice) && (
+                <div className="metric-card">
+                  <h3>Processing Summary</h3>
+                  <div className="processing-summary-grid">
+                    {showWordBudgetNotice && (
+                      <>
+                        <div className="metric-item">
+                          <span className="metric-label">Original words</span>
+                          <span className="metric-value">{formatNumber(wordBudget.originalWords)}</span>
+                        </div>
+                        <div className="metric-item">
+                          <span className="metric-label">Words analyzed</span>
+                          <span className="metric-value">
+                            {formatNumber(wordBudget.processedWords)}
+                            {typeof wordBudget.limit === 'number' && (
+                              <span className="metric-hint">Limit {formatNumber(wordBudget.limit)}</span>
+                            )}
+                          </span>
+                        </div>
+                        {Array.isArray(wordBudget.sampledPages) && wordBudget.sampledPages.length > 0 && (
+                          <div className="metric-item">
+                            <span className="metric-label">Sampled pages</span>
+                            <span className="metric-value">
+                              {wordBudget.sampledPages.slice(0, 8).join(', ')}
+                              {wordBudget.sampledPages.length > 8 ? '…' : ''}
+                            </span>
+                          </div>
+                        )}
+                      </>
+                    )}
+                    {showPageSamplingNotice && (
+                      <>
+                        <div className="metric-item">
+                          <span className="metric-label">Pages processed</span>
+                          <span className="metric-value">
+                            {formatNumber(pageSampling.processedPages)} / {formatNumber(pageSampling.totalPages)}
+                          </span>
+                        </div>
+                        {typeof pageSampling.limit === 'number' && (
+                          <div className="metric-item">
+                            <span className="metric-label">Configured page limit</span>
+                            <span className="metric-value">{formatNumber(pageSampling.limit)}</span>
+                          </div>
+                        )}
+                      </>
+                    )}
                   </div>
                 </div>
               )}
