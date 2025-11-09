@@ -306,24 +306,29 @@ def analyze_document(text, user_keywords, text_metadata=None, word_limit_overrid
         label = spec['label']
         tokens = spec['tokens']
         pattern = compile_keyword_pattern(tokens)
-        matches = list(pattern.finditer(text_lower)) if pattern else []
-
-        freq[label] = len(matches)
-
+        match_count = 0
         contexts = []
-        for match in matches:
-            snippet = build_snippet(processed_text, match.start(), match.end(), word_spans, window=window)
-            if snippet:
-                contexts.append({
-                    'snippet': snippet,
-                    'page': find_page_for_offset(match.start()),
-                    'start': match.start(),
-                    'end': match.end(),
-                    'match_text': processed_text[match.start():match.end()].strip()
-                })
-            if len(contexts) >= 5:
-                break
-        kwic_results[label] = contexts
+        if pattern:
+            for match in pattern.finditer(text_lower):
+                match_count += 1
+                if len(contexts) >= 5:
+                    continue
+                snippet = build_snippet(processed_text, match.start(), match.end(), word_spans, window=window)
+                if snippet:
+                    contexts.append({
+                        'snippet': snippet,
+                        'page': find_page_for_offset(match.start()),
+                        'start': match.start(),
+                        'end': match.end(),
+                        'match_text': processed_text[match.start():match.end()].strip()
+                    })
+        freq[label] = match_count
+
+        if contexts:
+            kwic_results[label] = contexts
+        else:
+            kwic_results[label] = []
+
 
         if len(tokens) == 1:
             token = tokens[0]
