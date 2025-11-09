@@ -38,6 +38,9 @@ except ImportError:
     from sampling_utils import select_evenly_spaced_indices
 
 
+_PAGE_LIMIT_SENTINEL = object()
+
+
 def build_page_selection(total_pages, page_limit):
     """Return indices plus metadata about how many pages are processed."""
     if total_pages is None or total_pages <= 0:
@@ -208,7 +211,7 @@ def extract_text_pymupdf(file_bytes, reason_label="preferred", page_limit=None):
             doc.close()
 
 
-def extract_text_pdf(file_stream, return_metadata=False):
+def extract_text_pdf(file_stream, return_metadata=False, page_limit_override=_PAGE_LIMIT_SENTINEL):
     try:
         try:
             file_stream.seek(0, os.SEEK_END)
@@ -228,7 +231,7 @@ def extract_text_pdf(file_stream, return_metadata=False):
         pymupdf_text = None
         pymupdf_pages = None
         pymupdf_page_spans = None
-        page_limit = MAX_PDF_PAGES
+        page_limit = MAX_PDF_PAGES if page_limit_override is _PAGE_LIMIT_SENTINEL else page_limit_override
 
         if fitz:
             (

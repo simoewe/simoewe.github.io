@@ -106,8 +106,8 @@ function App() {
 
   const wordBudgetButtonLabel = wordBudgetDisabled ? "Re-enable word budget" : "Disable word budget";
   const wordBudgetStatusLine = wordBudgetDisabled
-    ? "Word budget disabled — entire documents will be processed."
-    : "Word budget active • Default limit (~120,000 words) keeps analyses stable.";
+    ? "Word & page limits disabled — every page and the full text are processed."
+    : "Word & page limits active • Default guard (~120k words & 500 pages) keeps analyses stable.";
 
   const DEFAULT_ANALYSIS_STEPS = useMemo(() => ([
     { id: 'upload', label: 'Upload & validation' },
@@ -972,10 +972,10 @@ function App() {
                   </div>
                   <div className="word-budget-panel">
                     <div className="word-budget-copy">
-                      <span className="word-budget-title">Word budget</span>
+                      <span className="word-budget-title">Word & page limits</span>
                       <span className="word-budget-status-text">{wordBudgetStatusLine}</span>
                       <p className="word-budget-warning">
-                        Disabling the limit may slow down processing or crash the analysis on very large PDFs.
+                        Disabling both guards removes the word budget and page sampling caps, which can slow down processing or crash on very large PDFs.
                       </p>
                     </div>
                     <button

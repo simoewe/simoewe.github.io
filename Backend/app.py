@@ -122,6 +122,7 @@ def analyze():
 
         raw_keywords = request.form.get('buzzwords', '')
         user_keywords = [w.strip() for w in raw_keywords.split(',') if w.strip()]
+        disable_limits = str(request.form.get('wordBudgetMode', '')).strip().lower() == 'disabled'
 
         try:
             text_metadata = None
@@ -143,7 +144,10 @@ def analyze():
                 }
 
             if filename.endswith('.pdf'):
-                text, text_metadata = extract_text_pdf(file, return_metadata=True)
+                pdf_kwargs = {'return_metadata': True}
+                if disable_limits:
+                    pdf_kwargs['page_limit_override'] = None
+                text, text_metadata = extract_text_pdf(file, **pdf_kwargs)
             elif filename.endswith('.docx'):
                 text = extract_text_docx(file)
                 text_metadata = build_default_metadata(text)
@@ -159,10 +163,8 @@ def analyze():
             logging.error(f"Document extraction error: {extraction_error}")
             return jsonify({'error': 'Failed to extract text from the document.'}), 400
 
-        disable_word_budget = str(request.form.get('wordBudgetMode', '')).strip().lower() == 'disabled'
-
         analysis_kwargs = {}
-        if disable_word_budget:
+        if disable_limits:
             analysis_kwargs['word_limit_override'] = None
 
         try:
