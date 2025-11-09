@@ -280,61 +280,59 @@ function App() {
 
     const errors = [];
 
-    await Promise.all(
-      analyzableDocs.map(async (doc) => {
-        const runToken = analysisRunTokens.get(doc.id);
-        try {
-          const formData = new FormData();
-          formData.append("file", doc.file);
-          formData.append("buzzwords", keywords);
+    for (const doc of analyzableDocs) {
+      const runToken = analysisRunTokens.get(doc.id);
+      try {
+        const formData = new FormData();
+        formData.append("file", doc.file);
+        formData.append("buzzwords", keywords);
 
-          const res = await fetch(endpoint, {
-            method: "POST",
-            body: formData,
-          });
+        const res = await fetch(endpoint, {
+          method: "POST",
+          body: formData,
+        });
 
-          const contentType = res.headers.get("content-type") || "";
-          if (!contentType.includes("application/json")) {
-            const text = await res.text();
-            throw new Error(text || `Unexpected response (${res.status})`);
-          }
-          const data = await res.json();
-          if (!res.ok || data.error) {
-            throw new Error(data.error || "Analysis request failed.");
-          }
-
-          updateDocument(doc.id, (current) => {
-            if (current.analysisRunToken !== runToken) {
-              return null;
-            }
-            return {
-              status: "success",
-              analysisResult: data,
-              analysisError: "",
-              backendDocumentId: data.document_id || current.backendDocumentId,
-            };
-          });
-        } catch (err) {
-          let shouldReportError = false;
-          updateDocument(doc.id, (current) => {
-            if (current.analysisRunToken !== runToken) {
-              return null;
-            }
-            shouldReportError = true;
-            return {
-              status: "error",
-              analysisResult: null,
-              analysisError: err.message,
-            };
-          });
-          if (shouldReportError) {
-            errors.push(`${doc.name}: ${err.message}`);
-          }
-        } finally {
-          finishDocumentAnalysisIndicators(doc.id, runToken);
+        const contentType = res.headers.get("content-type") || "";
+        if (!contentType.includes("application/json")) {
+          const text = await res.text();
+          throw new Error(text || `Unexpected response (${res.status})`);
         }
-      })
-    );
+        const data = await res.json();
+        if (!res.ok || data.error) {
+          throw new Error(data.error || "Analysis request failed.");
+        }
+
+        updateDocument(doc.id, (current) => {
+          if (current.analysisRunToken !== runToken) {
+            return null;
+          }
+          return {
+            status: "success",
+            analysisResult: data,
+            analysisError: "",
+            backendDocumentId: data.document_id || current.backendDocumentId,
+          };
+        });
+      } catch (err) {
+        let shouldReportError = false;
+        updateDocument(doc.id, (current) => {
+          if (current.analysisRunToken !== runToken) {
+            return null;
+          }
+          shouldReportError = true;
+          return {
+            status: "error",
+            analysisResult: null,
+            analysisError: err.message,
+          };
+        });
+        if (shouldReportError) {
+          errors.push(`${doc.name}: ${err.message}`);
+        }
+      } finally {
+        finishDocumentAnalysisIndicators(doc.id, runToken);
+      }
+    }
 
     if (errors.length) {
       setError(
