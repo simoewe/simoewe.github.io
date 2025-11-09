@@ -34,6 +34,8 @@ _WORD_LIMIT_SENTINEL = object()
 SENTIMENT_CHAR_LIMIT = 20000
 REGEX_CHUNK_SIZE = 250_000
 REGEX_CHUNK_OVERLAP = 1_000
+WORDCLOUD_MAX_TERMS = 400
+WORDCLOUD_MAX_WORDS = 180_000
 
 
 def build_keyword_specs(user_keywords):
@@ -209,9 +211,9 @@ def generate_wordcloud(freq):
     return f"data:image/png;base64,{img_base64}"
 
 
-def iter_keyword_matches(pattern, text, chunk_size=REGEX_CHUNK_SIZE, overlap=REGEX_CHUNK_OVERLAP):
+def iter_pattern_matches(pattern, text, chunk_size=REGEX_CHUNK_SIZE, overlap=REGEX_CHUNK_OVERLAP):
     """
-    Yield (start, end) offsets for regex matches while scanning the text in chunks.
+    Yield (start, end, group_name) offsets for regex matches while scanning the text in chunks.
     """
     if not pattern or not text:
         return
@@ -219,7 +221,7 @@ def iter_keyword_matches(pattern, text, chunk_size=REGEX_CHUNK_SIZE, overlap=REG
     text_length = len(text)
     if text_length <= chunk_size:
         for match in pattern.finditer(text):
-            yield match.start(), match.end()
+            yield match.start(), match.end(), match.lastgroup
         return
 
     start = 0
@@ -228,10 +230,35 @@ def iter_keyword_matches(pattern, text, chunk_size=REGEX_CHUNK_SIZE, overlap=REG
         end = min(text_length, start + chunk_size)
         chunk = text[start:end]
         for match in pattern.finditer(chunk):
-            yield start + match.start(), start + match.end()
+            yield start + match.start(), start + match.end(), match.lastgroup
         if end >= text_length:
             break
         start = max(0, end - safe_overlap)
+
+
+def build_combined_keyword_regex(keyword_specs):
+    """
+    Build a single regex that matches all keywords at once.
+    Returns (pattern, group_name->label map).
+    """
+    parts = []
+    group_to_label = {}
+    for idx, spec in enumerate(keyword_specs):
+        tokens = spec['tokens']
+        if not tokens:
+            continue
+        pattern = compile_keyword_pattern(tokens)
+        if not pattern:
+            continue
+        group_name = f"kw{idx}"
+        parts.append(f"(?P<{group_name}>{pattern.pattern})")
+        group_to_label[group_name] = spec['label']
+
+    if not parts:
+        return None, {}
+
+    combined = "|".join(parts)
+    return re.compile(combined, re.IGNORECASE), group_to_label
 
 
 def analyze_sentiment_safe(text):
@@ -299,8 +326,8 @@ def analyze_document(text, user_keywords, text_metadata=None, word_limit_overrid
     word_pattern = re.compile(r'\b\w[\w\-_/]*\b')
     word_spans = list(word_pattern.finditer(processed_text))
 
-    freq = {}
-    kwic_results = {}
+    freq = {spec['label']: 0 for spec in keyword_specs}
+    kwic_results = {spec['label']: [] for spec in keyword_specs}
     collocations = {}
     window = 20
 
@@ -329,34 +356,43 @@ def analyze_document(text, user_keywords, text_metadata=None, word_limit_overrid
         # If offset is at or beyond the last recorded end, assume last page
         return page_map[-1].get('number')
 
+    combined_pattern, group_to_label = build_combined_keyword_regex(keyword_specs)
+
+    def record_match(label, match_start, match_end):
+        if label not in freq:
+            return
+        freq[label] += 1
+        contexts = kwic_results[label]
+        if len(contexts) >= 5:
+            return
+        snippet = build_snippet(processed_text, match_start, match_end, word_spans, window=window)
+        if not snippet:
+            return
+        contexts.append({
+            'snippet': snippet,
+            'page': find_page_for_offset(match_start),
+            'start': match_start,
+            'end': match_end,
+            'match_text': processed_text[match_start:match_end].strip()
+        })
+
+    if combined_pattern:
+        for match_start, match_end, group_name in iter_pattern_matches(combined_pattern, text_lower):
+            label = group_to_label.get(group_name)
+            if label:
+                record_match(label, match_start, match_end)
+    else:
+        for spec in keyword_specs:
+            label = spec['label']
+            pattern = compile_keyword_pattern(spec['tokens'])
+            if not pattern:
+                continue
+            for match_start, match_end, _ in iter_pattern_matches(pattern, text_lower):
+                record_match(label, match_start, match_end)
+
     for spec in keyword_specs:
         label = spec['label']
         tokens = spec['tokens']
-        pattern = compile_keyword_pattern(tokens)
-        match_count = 0
-        contexts = []
-        if pattern:
-            for match_start, match_end in iter_keyword_matches(pattern, text_lower):
-                match_count += 1
-                if len(contexts) >= 5:
-                    continue
-                snippet = build_snippet(processed_text, match_start, match_end, word_spans, window=window)
-                if snippet:
-                    contexts.append({
-                        'snippet': snippet,
-                        'page': find_page_for_offset(match_start),
-                        'start': match_start,
-                        'end': match_end,
-                        'match_text': processed_text[match_start:match_end].strip()
-                    })
-        freq[label] = match_count
-
-        if contexts:
-            kwic_results[label] = contexts
-        else:
-            kwic_results[label] = []
-
-
         if len(tokens) == 1:
             token = tokens[0]
             indices = token_index.get(token, [])
@@ -395,7 +431,19 @@ def analyze_document(text, user_keywords, text_metadata=None, word_limit_overrid
 
     trend_results, trend_insights = analyze_trends(sentences)
 
-    wordcloud_image = generate_wordcloud(freq)
+    nonzero_terms = sum(1 for value in freq.values() if value > 0)
+    can_render_wordcloud = (
+        nonzero_terms > 0
+        and nonzero_terms <= WORDCLOUD_MAX_TERMS
+        and budget_info.get('processed_word_count', 0) <= WORDCLOUD_MAX_WORDS
+    )
+    wordcloud_image = generate_wordcloud(freq) if can_render_wordcloud else None
+    if not can_render_wordcloud and nonzero_terms > 0:
+        logging.info(
+            "Skipping word cloud generation (terms=%s, processed_words=%s)",
+            nonzero_terms,
+            budget_info.get('processed_word_count')
+        )
 
     page_selection_meta = (text_metadata or {}).get('page_selection') if text_metadata else None
     page_sampling_summary = None
