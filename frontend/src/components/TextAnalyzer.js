@@ -12,6 +12,7 @@ const TREND_STATUS_LABELS = {
 const TextAnalyzer = ({
   analysisResult,
   loading,
+  queued = false,
   analysisProgress = 0,
   analysisSteps = [],
   customKeywords = [],
@@ -120,13 +121,24 @@ const TextAnalyzer = ({
     };
   };
 
+  if (queued) {
+    return (
+      <div className="text-analyzer">
+        <div className="queue-state">
+          <div className="queue-spinner"></div>
+          <p>Document in queue. Waiting for completion of previous documents…</p>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     const clampedProgress = Math.max(0, Math.min(analysisProgress, 100));
     return (
       <div className="text-analyzer">
         <div className="loading-container">
           <div className="loading-spinner"></div>
-          <p>Analyzing your document...</p>
+          <p className="loading-message">Analyzing your document...</p>
           {analysisSteps.length > 0 && (
             <div className="loading-steps">
               {analysisSteps.map((step) => (

@@ -206,11 +206,13 @@ function RightPanel({
     const statusLabel =
       activeDocument.status === "loading"
         ? "Analyzing…"
-        : activeDocument.status === "success"
-          ? "Ready"
-          : activeDocument.status === "error"
-            ? "Failed"
-            : "Idle";
+        : activeDocument.status === "queued"
+          ? "Queued"
+          : activeDocument.status === "success"
+            ? "Ready"
+            : activeDocument.status === "error"
+              ? "Failed"
+              : "Idle";
     const viewerSource =
       activeDocument.viewerSrc ||
       activeDocument.baseViewerUrl ||

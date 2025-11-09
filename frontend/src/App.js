@@ -268,6 +268,26 @@ function App() {
       clearDocumentAnalysisTimers(doc.id);
       updateDocument(doc.id, (current) => ({
         ...current,
+        status: "queued",
+        analysisResult: null,
+        analysisError: "",
+        analysisProgress: 0,
+        analysisSteps: createInitialSteps(),
+        analysisRunToken: runToken,
+      }));
+    });
+
+    const activateDocument = (doc) => {
+      if (!doc) {
+        return;
+      }
+      const runToken = analysisRunTokens.get(doc.id);
+      if (!runToken) {
+        return;
+      }
+      clearDocumentAnalysisTimers(doc.id);
+      updateDocument(doc.id, (current) => ({
+        ...current,
         status: "loading",
         analysisResult: null,
         analysisError: "",
@@ -276,12 +296,21 @@ function App() {
         analysisRunToken: runToken,
       }));
       startDocumentAnalysisIndicators(doc.id, runToken);
-    });
+    };
+
+    if (analyzableDocs.length > 0) {
+      activateDocument(analyzableDocs[0]);
+    }
 
     const errors = [];
 
-    for (const doc of analyzableDocs) {
+    for (let index = 0; index < analyzableDocs.length; index += 1) {
+      const doc = analyzableDocs[index];
       const runToken = analysisRunTokens.get(doc.id);
+
+      if (index > 0) {
+        activateDocument(doc);
+      }
       try {
         const formData = new FormData();
         formData.append("file", doc.file);
@@ -729,7 +758,8 @@ function App() {
       (doc) =>
         doc.file &&
         doc.status !== "loading" &&
-        doc.status !== "success"
+        doc.status !== "success" &&
+        doc.status !== "queued"
     );
 
     if (!docsReadyForAnalysis.length) {
@@ -749,7 +779,7 @@ function App() {
 
   const totalDocuments = documents.length;
   const analyzingCount = documents.filter((doc) => doc.status === "loading").length;
-  const processedCount = Math.max(0, totalDocuments - analyzingCount);
+  const processedCount = documents.filter((doc) => doc.status === "success" || doc.status === "error").length;
   const remainingCount = remainingDocuments.length;
   const hasDocsToAnalyze = remainingCount > 0;
   const analyzeButtonDisabled =
@@ -1004,6 +1034,11 @@ function App() {
                                       Analyzing…
                                     </span>
                                   )}
+                                  {doc.status === "queued" && (
+                                    <span className="analysis-card-status analysis-card-status-queued">
+                                      In queue
+                                    </span>
+                                  )}
                                   {doc.status === "success" && (
                                     <span className="analysis-card-status analysis-card-status-success">
                                       Ready
@@ -1036,6 +1071,7 @@ function App() {
                             <TextAnalyzer
                               analysisResult={effectiveResult}
                               loading={doc.status === "loading"}
+                              queued={doc.status === "queued"}
                               analysisProgress={doc.analysisProgress || 0}
                               analysisSteps={doc.analysisSteps || []}
                               customKeywords={submittedKeywords}
