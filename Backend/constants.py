@@ -33,7 +33,45 @@ def _get_int_env(name, default):
 
 ALLOWED_EXTENSIONS = {'.pdf', '.docx', '.txt'}
 MAX_PDF_PAGES = _get_int_env('MAX_PDF_PAGES', 500)
-MAX_WORDS_ANALYSIS = _get_int_env('MAX_WORDS_ANALYSIS', 120_000)
+_DEFAULT_MAX_WORDS_ANALYSIS = _get_int_env('MAX_WORDS_ANALYSIS', 120_000)
+_current_word_limit = _DEFAULT_MAX_WORDS_ANALYSIS
+
+
+def get_max_words_analysis():
+    """Return the currently configured max-word limit (None disables the guard)."""
+    return _current_word_limit
+
+
+def get_default_max_words_analysis():
+    """Expose the startup default to allow clients to restore it."""
+    return _DEFAULT_MAX_WORDS_ANALYSIS
+
+
+def set_max_words_analysis(limit):
+    """
+    Update the runtime word limit.
+
+    Accepts None to disable the guard or any positive integer.
+    """
+    global _current_word_limit
+    if limit is None:
+        _current_word_limit = None
+        return
+
+    try:
+        parsed = int(str(limit).replace("_", "").replace(",", ""))
+    except (TypeError, ValueError):
+        raise ValueError("Word limit must be an integer or null") from None
+
+    if parsed <= 0:
+        _current_word_limit = None
+        return
+
+    _current_word_limit = parsed
+
+
+# Preserve legacy name for modules that still import the constant directly.
+MAX_WORDS_ANALYSIS = get_max_words_analysis()
 PDF_OPTIMIZE_THRESHOLD_BYTES = 8 * 1024 * 1024  # 8 MB
 PDF_PDFMINER_MAX_BYTES = 4 * 1024 * 1024  # Don't send very large PDFs to pdfminer
 PDF_PDFMINER_MAX_PAGES = 80

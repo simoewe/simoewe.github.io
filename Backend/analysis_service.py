@@ -13,8 +13,8 @@ import re
 try:
     from .constants import (
         DEFAULT_TREND_KEYWORDS,
-        MAX_WORDS_ANALYSIS,
         STRIP_CHARS,
+        get_max_words_analysis,
     )
     from .keyword_utils import build_snippet, compile_keyword_pattern, tokenize_keyword
     from .trend_analysis import analyze_trends
@@ -22,8 +22,8 @@ try:
 except ImportError:  # Fallback when modules are imported without package context
     from constants import (
         DEFAULT_TREND_KEYWORDS,
-        MAX_WORDS_ANALYSIS,
         STRIP_CHARS,
+        get_max_words_analysis,
     )
     from keyword_utils import build_snippet, compile_keyword_pattern, tokenize_keyword
     from trend_analysis import analyze_trends
@@ -203,7 +203,7 @@ def generate_wordcloud(freq):
 
 
 def analyze_document(text, user_keywords, text_metadata=None):
-    word_limit = MAX_WORDS_ANALYSIS
+    word_limit = get_max_words_analysis()
     processed_text, text_lower, words, budget_info = prepare_text_for_analysis(
         text,
         text_metadata,

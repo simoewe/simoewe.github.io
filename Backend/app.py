@@ -16,6 +16,11 @@ try:  # Prefer package-relative imports when available
         extract_text_pdf,
         extract_text_txt,
     )
+    from .constants import (
+        get_max_words_analysis,
+        get_default_max_words_analysis,
+        set_max_words_analysis,
+    )
 except ImportError:  # Fallback for environments running from the backend folder root
     from analysis_service import analyze_document
     from document_processing import (
@@ -23,6 +28,11 @@ except ImportError:  # Fallback for environments running from the backend folder
         extract_text_docx,
         extract_text_pdf,
         extract_text_txt,
+    )
+    from constants import (
+        get_max_words_analysis,
+        get_default_max_words_analysis,
+        set_max_words_analysis,
     )
 
 # S3-kompatible OCI-API - Für Oracle Anbindung
@@ -341,6 +351,46 @@ def search():
     except Exception as e:
         logging.error(f"Search failed: {e}")
         return jsonify({'error': 'Search request failed'}), 500
+
+
+@app.route('/settings/word-limit', methods=['GET', 'POST'])
+def word_limit_settings():
+    """
+    Inspect or update the runtime word-budget limit.
+
+    GET returns the current and default limits.
+    POST accepts {"limit": <int|null>} or {"useDefault": true}.
+    """
+    if request.method == 'GET':
+        current_limit = get_max_words_analysis()
+        return jsonify({
+            'limit': current_limit,
+            'defaultLimit': get_default_max_words_analysis(),
+            'disabled': current_limit is None
+        }), 200
+
+    data = request.get_json(silent=True) or {}
+    try:
+        if data.get('useDefault'):
+            set_max_words_analysis(get_default_max_words_analysis())
+        elif 'limit' in data or 'disabled' in data:
+            if data.get('disabled') is True:
+                set_max_words_analysis(None)
+            else:
+                # When explicitly provided, let set_max_words_analysis perform validation.
+                set_max_words_analysis(data.get('limit'))
+        else:
+            return jsonify({'error': 'Missing \"limit\" value'}), 400
+    except ValueError as err:
+        return jsonify({'error': str(err)}), 400
+
+    current_limit = get_max_words_analysis()
+    logging.info("Word limit updated to %s", current_limit)
+    return jsonify({
+        'limit': current_limit,
+        'defaultLimit': get_default_max_words_analysis(),
+        'disabled': current_limit is None
+    }), 200
 
 
 @app.route('/verify-visibility-code', methods=['POST'])
