@@ -6,9 +6,9 @@ import logging
 from collections import Counter
 
 import matplotlib.pyplot as plt
+import re
 from textblob import TextBlob
 from wordcloud import WordCloud
-import re
 
 try:
     from .constants import (
@@ -28,6 +28,10 @@ except ImportError:  # Fallback when modules are imported without package contex
     from keyword_utils import build_snippet, compile_keyword_pattern, tokenize_keyword
     from trend_analysis import analyze_trends
     from sampling_utils import select_evenly_spaced_indices
+
+
+_WORD_LIMIT_SENTINEL = object()
+SENTIMENT_CHAR_LIMIT = 20000
 
 
 def build_keyword_specs(user_keywords):
@@ -177,7 +181,8 @@ def prepare_text_for_analysis(text, metadata, word_limit):
         "original_word_count": original_word_count,
         "processed_word_count": len(processed_words),
         "truncated": truncated,
-        "sampled_pages": sampled_pages
+        "sampled_pages": sampled_pages,
+        "mode": "disabled" if word_limit is None or (isinstance(word_limit, int) and word_limit <= 0) else "limited"
     }
 
     return processed_text, processed_lower, processed_words, budget_info
@@ -202,8 +207,43 @@ def generate_wordcloud(freq):
     return f"data:image/png;base64,{img_base64}"
 
 
-def analyze_document(text, user_keywords, text_metadata=None):
-    word_limit = get_max_words_analysis()
+def analyze_sentiment_safe(text):
+    """
+    Run TextBlob sentiment analysis on a bounded slice to avoid OOM on very large documents.
+    """
+    if not text:
+        return {'polarity': 0.0, 'subjectivity': 0.0}, {'sampled': False, 'maxChars': SENTIMENT_CHAR_LIMIT}
+
+    sample_text = text
+    sampled = False
+    if SENTIMENT_CHAR_LIMIT and len(text) > SENTIMENT_CHAR_LIMIT:
+        sample_text = text[:SENTIMENT_CHAR_LIMIT]
+        sampled = True
+
+    try:
+        blob = TextBlob(sample_text)
+        sentiment = {
+            'polarity': blob.sentiment.polarity,
+            'subjectivity': blob.sentiment.subjectivity
+        }
+        return sentiment, {
+            'sampled': sampled,
+            'maxChars': SENTIMENT_CHAR_LIMIT
+        }
+    except Exception as exc:
+        logging.warning("Sentiment analysis failed: %s", exc)
+        return {'polarity': 0.0, 'subjectivity': 0.0}, {
+            'sampled': sampled,
+            'maxChars': SENTIMENT_CHAR_LIMIT,
+            'error': str(exc)
+        }
+
+
+def analyze_document(text, user_keywords, text_metadata=None, word_limit_override=_WORD_LIMIT_SENTINEL):
+    if word_limit_override is _WORD_LIMIT_SENTINEL:
+        word_limit = get_max_words_analysis()
+    else:
+        word_limit = word_limit_override
     processed_text, text_lower, words, budget_info = prepare_text_for_analysis(
         text,
         text_metadata,
@@ -306,11 +346,7 @@ def analyze_document(text, user_keywords, text_metadata=None):
         for label in freq
     }
 
-    blob = TextBlob(processed_text)
-    sentiment = {
-        'polarity': blob.sentiment.polarity,
-        'subjectivity': blob.sentiment.subjectivity
-    }
+    sentiment, sentiment_sampling = analyze_sentiment_safe(processed_text)
 
     sentences = re.split(r'(?<=[.!?])\s+', processed_text)
     num_sentences = len([s for s in sentences if s.strip()])
@@ -349,9 +385,11 @@ def analyze_document(text, user_keywords, text_metadata=None):
             'originalWords': budget_info.get('original_word_count'),
             'processedWords': budget_info.get('processed_word_count'),
             'truncated': budget_info.get('truncated'),
-            'sampledPages': max_sampled_pages
+            'sampledPages': max_sampled_pages,
+            'mode': budget_info.get('mode')
         },
-        'pageSampling': page_sampling_summary
+        'pageSampling': page_sampling_summary,
+        'sentimentSampling': sentiment_sampling
     }
 
     analysis_payload = {

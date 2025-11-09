@@ -55,12 +55,6 @@ const parseKeywordString = (raw) => {
 
 const formatKeywordString = (list) => list.join(', ');
 
-const formatWordCount = (value) => (
-  typeof value === "number" && Number.isFinite(value)
-    ? value.toLocaleString("en-US")
-    : "unlimited"
-);
-
 function App() {
   const [keywords, setKeywords] = useState(() => formatKeywordString(DEFAULT_TECHNOLOGY_TERMS));
   const [submittedKeywords, setSubmittedKeywords] = useState([]);
@@ -79,13 +73,13 @@ function App() {
   const [uploadPanelTrigger, setUploadPanelTrigger] = useState(0);
   const [fileDialogTrigger, setFileDialogTrigger] = useState(0);
   const [isUploadPanelActive, setIsUploadPanelActive] = useState(true);
-  const [wordBudgetStatus, setWordBudgetStatus] = useState({
-    disabled: false,
-    limit: null,
-    defaultLimit: null,
+  const [wordBudgetDisabled, setWordBudgetDisabled] = useState(() => {
+    if (typeof window === "undefined") {
+      return false;
+    }
+    const stored = window.localStorage?.getItem("wordBudgetDisabled");
+    return stored === "true";
   });
-  const [wordBudgetPending, setWordBudgetPending] = useState(false);
-  const [wordBudgetStatusError, setWordBudgetStatusError] = useState("");
 
   const userKeywordList = useMemo(() => parseKeywordString(keywords), [keywords]);
 
@@ -110,44 +104,10 @@ function App() {
     [documents]
   );
 
-  const wordBudgetDisabled = wordBudgetStatus.disabled;
-  const wordBudgetLimit = wordBudgetStatus.limit;
-  const wordBudgetDefaultLimit = wordBudgetStatus.defaultLimit;
-  const effectiveWordLimit = wordBudgetDisabled ? null : (wordBudgetLimit ?? wordBudgetDefaultLimit);
-  const wordBudgetButtonLabel = wordBudgetDisabled ? "Restore word limit" : "Disable word limit";
+  const wordBudgetButtonLabel = wordBudgetDisabled ? "Re-enable word budget" : "Disable word budget";
   const wordBudgetStatusLine = wordBudgetDisabled
     ? "Word budget disabled — entire documents will be processed."
-    : effectiveWordLimit
-      ? `Word budget active • Limit ${formatWordCount(effectiveWordLimit)} words`
-      : "Word budget active • Default limit in effect";
-
-  const loadWordBudgetStatus = useCallback(async () => {
-    try {
-      const apiUrl = getApiBase();
-      const endpoint = apiUrl ? `${apiUrl}/settings/word-limit` : "/settings/word-limit";
-      const res = await fetch(endpoint);
-      const contentType = res.headers.get("content-type") || "";
-      if (!contentType.includes("application/json")) {
-        throw new Error(`Unexpected response (${res.status})`);
-      }
-      const data = await res.json();
-      if (!res.ok || data.error) {
-        throw new Error(data.error || "Failed to load word-budget settings.");
-      }
-      setWordBudgetStatus({
-        disabled: Boolean(data.disabled),
-        limit: typeof data.limit === "number" ? data.limit : null,
-        defaultLimit: typeof data.defaultLimit === "number" ? data.defaultLimit : null,
-      });
-      setWordBudgetStatusError("");
-    } catch (err) {
-      setWordBudgetStatusError(err.message || "Unable to load word-budget settings.");
-    }
-  }, []);
-
-  useEffect(() => {
-    loadWordBudgetStatus();
-  }, [loadWordBudgetStatus]);
+    : "Word budget active • Default limit (~120,000 words) keeps analyses stable.";
 
   const DEFAULT_ANALYSIS_STEPS = useMemo(() => ([
     { id: 'upload', label: 'Upload & validation' },
@@ -367,6 +327,7 @@ function App() {
         const formData = new FormData();
         formData.append("file", doc.file);
         formData.append("buzzwords", keywords);
+        formData.append("wordBudgetMode", wordBudgetDisabled ? "disabled" : "default");
 
         const res = await fetch(endpoint, {
           method: "POST",
@@ -435,6 +396,7 @@ function App() {
     startDocumentAnalysisIndicators,
     updateDocument,
     userKeywordList,
+    wordBudgetDisabled,
   ]);
 
   const restartDocumentAnalysis = useCallback((docId) => {
@@ -467,38 +429,19 @@ function App() {
     setTechnologyFeedback("");
   }, []);
 
-  const handleToggleWordBudget = useCallback(async () => {
-    setWordBudgetPending(true);
-    setWordBudgetStatusError("");
-    try {
-      const apiUrl = getApiBase();
-      const endpoint = apiUrl ? `${apiUrl}/settings/word-limit` : "/settings/word-limit";
-      const payload = wordBudgetStatus.disabled ? { useDefault: true } : { disabled: true };
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const contentType = res.headers.get("content-type") || "";
-      if (!contentType.includes("application/json")) {
-        const text = await res.text();
-        throw new Error(text || `Unexpected response (${res.status})`);
+  const handleToggleWordBudget = useCallback(() => {
+    setWordBudgetDisabled((prev) => {
+      const next = !prev;
+      if (typeof window !== "undefined") {
+        try {
+          window.localStorage?.setItem("wordBudgetDisabled", String(next));
+        } catch (storageError) {
+          console.warn("Failed to persist word-budget preference", storageError);
+        }
       }
-      const data = await res.json();
-      if (!res.ok || data.error) {
-        throw new Error(data.error || "Failed to update word-budget settings.");
-      }
-      setWordBudgetStatus({
-        disabled: Boolean(data.disabled),
-        limit: typeof data.limit === "number" ? data.limit : null,
-        defaultLimit: typeof data.defaultLimit === "number" ? data.defaultLimit : null,
-      });
-    } catch (err) {
-      setWordBudgetStatusError(err.message || "Unable to update the word budget.");
-    } finally {
-      setWordBudgetPending(false);
-    }
-  }, [wordBudgetStatus.disabled]);
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     if (!technologyFeedback) return;
@@ -1039,13 +982,9 @@ function App() {
                       type="button"
                       className="word-budget-button"
                       onClick={handleToggleWordBudget}
-                      disabled={wordBudgetPending}
                     >
-                      {wordBudgetPending ? "Updating..." : wordBudgetButtonLabel}
+                      {wordBudgetButtonLabel}
                     </button>
-                    {wordBudgetStatusError && (
-                      <p className="word-budget-error">{wordBudgetStatusError}</p>
-                    )}
                   </div>
                 </aside>
               </div>

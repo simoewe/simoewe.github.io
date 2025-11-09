@@ -159,11 +159,18 @@ def analyze():
             logging.error(f"Document extraction error: {extraction_error}")
             return jsonify({'error': 'Failed to extract text from the document.'}), 400
 
+        disable_word_budget = str(request.form.get('wordBudgetMode', '')).strip().lower() == 'disabled'
+
+        analysis_kwargs = {}
+        if disable_word_budget:
+            analysis_kwargs['word_limit_override'] = None
+
         try:
             analysis_payload, img_data_url, word_count = analyze_document(
                 text,
                 user_keywords,
-                text_metadata
+                text_metadata,
+                **analysis_kwargs
             )
         except ValueError as analysis_error:
             logging.warning(f"Analysis validation error: {analysis_error}")
