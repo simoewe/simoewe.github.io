@@ -851,60 +851,94 @@ function App() {
         isOpen={activeFooterModal === "about"}
         onClose={closeFooterModal}
       >
-        <p>
-          Trendalyze is a research prototype that accelerates the review of sustainability, innovation, and
-          annual reports. It combines automated extraction, keyword steering, and visual exploration so that
-          researchers can surface signals from hundreds of pages in minutes instead of hours.
-        </p>
-        <p>
-          Core capabilities:
-        </p>
-        <ul>
-          <li>Automated PDF parsing with OCR cleaning tailored to corporate disclosures.</li>
-          <li>Keyword workbench to fine-tune trend lenses for each analysis session.</li>
-          <li>Interactive highlight stream that groups matching passages by theme and sentiment.</li>
-          <li>Document library with curated ESG and innovation filings for benchmarking.</li>
-        </ul>
-        <p>
-          The tool is developed at the University of Hamburg as part of the Master Project Stahlbock. We
-          continuously extend the corpus and welcome ideas for new sectors, languages, or analytical lenses.
-        </p>
+        <div className="info-modal-stack">
+          <section>
+            <p className="info-lead">
+              Trendalyze is a research prototype that accelerates the review of sustainability, innovation, and
+              annual reports. It combines automated extraction, keyword steering, and visual exploration so that
+              researchers can surface signals from hundreds of pages in minutes instead of hours.
+            </p>
+          </section>
+          <section>
+            <h3>Core capabilities</h3>
+            <ul className="info-list">
+              <li>Automated PDF parsing with OCR cleaning tailored to corporate disclosures.</li>
+              <li>Keyword workbench to fine-tune trend lenses for each analysis session.</li>
+              <li>Interactive highlight stream that groups matching passages by theme and sentiment.</li>
+              <li>Document library with curated ESG and innovation filings for benchmarking.</li>
+            </ul>
+          </section>
+          <section>
+            <p>
+              The tool is developed at the University of Hamburg as part of the Master Project Stahlbock. We
+              continuously extend the corpus and welcome ideas for new sectors, languages, or analytical lenses.
+            </p>
+          </section>
+        </div>
       </InfoModal>
       <InfoModal
         title="Terms of Use"
         isOpen={activeFooterModal === "terms"}
         onClose={closeFooterModal}
       >
-        <ul>
-          <li>Trendalyze is limited to academic research and teaching within the University of Hamburg project team.</li>
-          <li>Only documents that are publicly available or explicitly cleared by the rights holder may be uploaded.</li>
-          <li>The output is exploratory and must not be used as legal, financial, or investment advice.</li>
-          <li>Personal data may only be processed with documented consent; otherwise it must be removed immediately.</li>
-          <li>Users are responsible for ensuring they have the right to process every document they add to the system.</li>
-          <li>The maintainers may revoke access or delete material that violates these terms without prior notice.</li>
-        </ul>
+        <div className="info-modal-stack">
+          <section>
+            <h3>Usage guidelines</h3>
+            <ul className="info-list">
+              <li>Trendalyze is limited to academic research and teaching within the University of Hamburg project team.</li>
+              <li>Only documents that are publicly available or explicitly cleared by the rights holder may be uploaded.</li>
+              <li>The output is exploratory and must not be used as legal, financial, or investment advice.</li>
+              <li>Personal data may only be processed with documented consent; otherwise it must be removed immediately.</li>
+              <li>Users are responsible for ensuring they have the right to process every document they add to the system.</li>
+              <li>The maintainers may revoke access or delete material that violates these terms without prior notice.</li>
+            </ul>
+          </section>
+          <section className="info-note">
+            <p>Please review and align with these principles before uploading or analyzing new material.</p>
+          </section>
+        </div>
       </InfoModal>
       <InfoModal
         title="Contact"
         isOpen={activeFooterModal === "contact"}
         onClose={closeFooterModal}
       >
-        <p>
-          Questions, ideas, or bug reports? Send us a note and the project team will respond within two working days.
-        </p>
-        <p>
-          <strong>Project lead:</strong> Simon Laatz<br />
-          <strong>Affiliation:</strong> University of Hamburg, Department of Information Systems<br />
-          <strong>Office:</strong> Von-Melle-Park 5, 20146 Hamburg<br />
-          <strong>Email:</strong>{" "}
-          <a href="mailto:simon.laatz@studium.uni-hamburg.de">
-            simon.laatz@studium.uni-hamburg.de
-          </a>
-        </p>
-        <p>
-          We welcome contributions to the document library, requests for additional analytics, and collaboration
-          inquiries from other research groups.
-        </p>
+        <div className="info-modal-stack">
+          <section>
+            <p>
+              Questions, ideas, or bug reports? Send us a note and the project team will respond within two working days.
+            </p>
+          </section>
+          <section className="info-contact-card">
+            <h3>Project team</h3>
+            <div className="info-contact-grid">
+              <div className="info-contact-item">
+                <span className="info-contact-label">Project lead</span>
+                <span className="info-contact-value">Simon Laatz</span>
+              </div>
+              <div className="info-contact-item">
+                <span className="info-contact-label">Affiliation</span>
+                <span className="info-contact-value">University of Hamburg, Department of Information Systems</span>
+              </div>
+              <div className="info-contact-item">
+                <span className="info-contact-label">Office</span>
+                <span className="info-contact-value">Von-Melle-Park 5, 20146 Hamburg</span>
+              </div>
+              <div className="info-contact-item">
+                <span className="info-contact-label">Email</span>
+                <a className="info-contact-link" href="mailto:simon.laatz@studium.uni-hamburg.de">
+                  simon.laatz@studium.uni-hamburg.de
+                </a>
+              </div>
+            </div>
+          </section>
+          <section>
+            <p>
+              We welcome contributions to the document library, requests for additional analytics, and collaboration
+              inquiries from other research groups.
+            </p>
+          </section>
+        </div>
       </InfoModal>
 
       {showKeywordModal && (

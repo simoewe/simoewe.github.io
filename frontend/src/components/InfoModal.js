@@ -23,13 +23,13 @@ export default function InfoModal({ title, isOpen, onClose, children }) {
       onClick={handleClose}
     >
       <div
-        className="modal-card"
+        className="modal-card info-modal"
         role="dialog"
         aria-modal="true"
         aria-labelledby={modalTitleId}
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="modal-header">
+        <div className="modal-header info-modal-header">
           <h2 id={modalTitleId}>{title}</h2>
           <button
             type="button"
@@ -40,7 +40,9 @@ export default function InfoModal({ title, isOpen, onClose, children }) {
             ×
           </button>
         </div>
-        <div className="modal-body">{children}</div>
+        <div className="modal-body info-modal-body">
+          <div className="info-modal-content">{children}</div>
+        </div>
       </div>
     </div>
   );
