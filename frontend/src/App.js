@@ -852,14 +852,22 @@ function App() {
         onClose={closeFooterModal}
       >
         <p>
-          Trendalyze helps researchers and students sift through lengthy corporate reports within minutes.
-          The tool highlights emerging technology trends, ESG narratives, and innovation topics so you can extract
-          key insights without reading every page manually.
+          Trendalyze is a research prototype that accelerates the review of sustainability, innovation, and
+          annual reports. It combines automated extraction, keyword steering, and visual exploration so that
+          researchers can surface signals from hundreds of pages in minutes instead of hours.
         </p>
         <p>
-          Built at the University of Hamburg, the platform combines automated text extraction with interactive
-          visualisations. We continue to expand the document library and welcome suggestions for additional
-          industries or use cases.
+          Core capabilities:
+        </p>
+        <ul>
+          <li>Automated PDF parsing with OCR cleaning tailored to corporate disclosures.</li>
+          <li>Keyword workbench to fine-tune trend lenses for each analysis session.</li>
+          <li>Interactive highlight stream that groups matching passages by theme and sentiment.</li>
+          <li>Document library with curated ESG and innovation filings for benchmarking.</li>
+        </ul>
+        <p>
+          The tool is developed at the University of Hamburg as part of the Master Project Stahlbock. We
+          continuously extend the corpus and welcome ideas for new sectors, languages, or analytical lenses.
         </p>
       </InfoModal>
       <InfoModal
@@ -868,10 +876,12 @@ function App() {
         onClose={closeFooterModal}
       >
         <ul>
-          <li>Trendalyze may only be used for academic research and teaching purposes within this project.</li>
-          <li>Uploaded or fetched documents must be publicly available or cleared by the respective rights holder.</li>
-          <li>The generated analyses provide guidance only and do not replace legal, financial, or strategic advice.</li>
-          <li>By using the platform you confirm that you will not process sensitive or personal data without consent.</li>
+          <li>Trendalyze is limited to academic research and teaching within the University of Hamburg project team.</li>
+          <li>Only documents that are publicly available or explicitly cleared by the rights holder may be uploaded.</li>
+          <li>The output is exploratory and must not be used as legal, financial, or investment advice.</li>
+          <li>Personal data may only be processed with documented consent; otherwise it must be removed immediately.</li>
+          <li>Users are responsible for ensuring they have the right to process every document they add to the system.</li>
+          <li>The maintainers may revoke access or delete material that violates these terms without prior notice.</li>
         </ul>
       </InfoModal>
       <InfoModal
@@ -880,17 +890,20 @@ function App() {
         onClose={closeFooterModal}
       >
         <p>
-          Questions, feedback, or bug reports? The project team is happy to help.
+          Questions, ideas, or bug reports? Send us a note and the project team will respond within two working days.
         </p>
         <p>
           <strong>Project lead:</strong> Simon Laatz<br />
+          <strong>Affiliation:</strong> University of Hamburg, Department of Information Systems<br />
+          <strong>Office:</strong> Von-Melle-Park 5, 20146 Hamburg<br />
           <strong>Email:</strong>{" "}
           <a href="mailto:simon.laatz@studium.uni-hamburg.de">
             simon.laatz@studium.uni-hamburg.de
           </a>
         </p>
         <p>
-          Feel free to reach out if you would like to contribute additional documents or propose new functionality.
+          We welcome contributions to the document library, requests for additional analytics, and collaboration
+          inquiries from other research groups.
         </p>
       </InfoModal>
 

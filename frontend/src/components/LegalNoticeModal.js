@@ -60,7 +60,9 @@ export default function LegalNoticeModal({ isOpen, onClose }) {
             <h3>Responsible under Sec. 18(2) MStV</h3>
             <p>
               Simon Laatz<br />
-              [ggf. Adresse]
+              Universität Hamburg<br />
+              Von-Melle-Park 5<br />
+              20146 Hamburg, Germany
             </p>
           </section>
 
@@ -97,9 +99,18 @@ export default function LegalNoticeModal({ isOpen, onClose }) {
           <section>
             <h3>Data protection</h3>
             <p>
-              This project processes only documents that are already publicly accessible. Should personal
-              data inadvertently be included, it will not be further processed and will be removed upon
-              request. Further information on data protection: <a href="#">[Link to a potential privacy policy]</a>
+              This project processes only documents that are already publicly accessible. Uploaded sources
+              remain in a restricted university environment and are deleted as soon as the analysis is
+              completed. We do not build user profiles, store personal data beyond the session, or share
+              materials with third parties.
+            </p>
+            <p>
+              Should personal data inadvertently be included, it will not be further processed and will be
+              removed upon request. Please contact{" "}
+              <a href="mailto:simon.laatz@studium.uni-hamburg.de">
+                simon.laatz@studium.uni-hamburg.de
+              </a>{" "}
+              for any privacy-related questions.
             </p>
           </section>
 
