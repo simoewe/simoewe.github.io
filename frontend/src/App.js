@@ -55,6 +55,24 @@ const parseKeywordString = (raw) => {
 
 const formatKeywordString = (list) => list.join(', ');
 
+const buildAnalysisErrorMessage = (error) => {
+  const baseMessage = (error && error.message) ? error.message : "Analysis request failed.";
+  const normalized = baseMessage.toLowerCase();
+
+  if (normalized.includes("failed to fetch")) {
+    const offlineHint =
+      typeof navigator !== "undefined" && navigator.onLine === false
+        ? "Your device appears to be offline."
+        : "";
+    const connectivityHint = "The analysis service could not be reached (server unavailable, blocked connection, or CORS error).";
+    return [offlineHint, connectivityHint, "Please try to restart the analysis."]
+      .filter(Boolean)
+      .join(" ");
+  }
+
+  return `${baseMessage} Please try to restart the analysis.`;
+};
+
 function App() {
   const [keywords, setKeywords] = useState(() => formatKeywordString(DEFAULT_TECHNOLOGY_TERMS));
   const [submittedKeywords, setSubmittedKeywords] = useState([]);
@@ -356,6 +374,7 @@ function App() {
           };
         });
       } catch (err) {
+        const friendlyError = buildAnalysisErrorMessage(err);
         let shouldReportError = false;
         updateDocument(doc.id, (current) => {
           if (current.analysisRunToken !== runToken) {
@@ -365,11 +384,11 @@ function App() {
           return {
             status: "error",
             analysisResult: null,
-            analysisError: err.message,
+            analysisError: friendlyError,
           };
         });
         if (shouldReportError) {
-          errors.push(`${doc.name}: ${err.message}`);
+          errors.push(`${doc.name}: ${friendlyError}`);
         }
       } finally {
         finishDocumentAnalysisIndicators(doc.id, runToken);
