@@ -874,6 +874,20 @@ function App() {
               continuously extend the corpus and welcome ideas for new sectors, languages, or analytical lenses.
             </p>
           </section>
+          <section>
+            <h3>Deployment & repository</h3>
+            <p>
+              Trendalyze runs on Render, and the full codebase is managed openly on{" "}
+              <a
+                href="https://github.com/simoewe/simoewe.github.io"
+                target="_blank"
+                rel="noreferrer"
+              >
+                GitHub
+              </a>
+              . If you have ideas or improvements, feel free to open a pull request — we review every contribution.
+            </p>
+          </section>
         </div>
       </InfoModal>
       <InfoModal

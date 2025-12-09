@@ -35,7 +35,7 @@ except ImportError:  # Fallback for environments running from the backend folder
         set_max_words_analysis,
     )
 
-# S3-kompatible OCI-API - Für Oracle Anbindung
+# S3-compatible OCI API helper (Oracle Object Storage)
 def get_s3_client():
     region = os.environ["OCI_REGION"]
     namespace = os.environ["OCI_NAMESPACE"]
@@ -453,7 +453,7 @@ def library():
 
         bucket = os.environ["OCI_BUCKET"]
         par_base = os.environ["PAR_BASE_URL"].rstrip('/')
-        prefix = request.args.get('prefix', '')  # optional: Ordner/prefix
+        prefix = request.args.get('prefix', '')  # optional: folder/prefix
         s3 = get_s3_client()
 
         objects = []
@@ -468,7 +468,7 @@ def library():
                 key = item["Key"]
                 if not key.lower().endswith(".pdf"):
                     continue
-                # URL über den Bucket-PAR bauen
+                # Build URL via bucket PAR
                 url = f"{par_base}/{quote(key)}"
                 objects.append({
                     "key": key,
@@ -483,7 +483,7 @@ def library():
             else:
                 break
 
-        # Sortiere optional nach Name (oder last_modified)
+        # Optionally sort by name (or last_modified)
         objects.sort(key=lambda x: x["name"].lower())
 
         return jsonify({"items": objects})
