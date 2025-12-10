@@ -91,7 +91,7 @@ def analyze_trends(sentences):
         trend_results.append({
             'trend': trend,
             'count': len(mentions),
-            'contexts': [m['sentence'] for m in mentions[:3]],
+            'contexts': [m['sentence'] for m in mentions],
             'status_counts': status_counts_full,
             'summary': summary
         })
@@ -101,7 +101,7 @@ def analyze_trends(sentences):
             'summary': summary,
             'total_mentions': len(mentions),
             'status_counts': status_counts_full,
-            'evidence': mentions[:5]
+            'evidence': mentions
         })
 
     return trend_results, trend_insights

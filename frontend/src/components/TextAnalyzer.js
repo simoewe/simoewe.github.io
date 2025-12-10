@@ -452,7 +452,7 @@ const TextAnalyzer = ({
                       <div key={idx} className="kwic-keyword">
                         <h4 className="keyword-title">{keyword}</h4>
                         <div className="context-list">
-                          {contexts.slice(0, 5).map((context, i) => {
+                          {contexts.map((context, i) => {
                             const normalized = normalizeContextEntry(context);
                             const snippetContent = highlightSnippet(
                               normalized.snippet,
@@ -488,11 +488,6 @@ const TextAnalyzer = ({
                               </div>
                             );
                           })}
-                          {contexts.length > 5 && (
-                            <div className="show-more">
-                              +{contexts.length - 5} more contexts
-                            </div>
-                          )}
                         </div>
                       </div>
                     ))}
