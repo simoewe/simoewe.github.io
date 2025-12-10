@@ -898,7 +898,7 @@ function App() {
             <p>
               Trendalyze runs on Render, and the full codebase is managed openly on{" "}
               <a
-                href="https://github.com/simoewe/simoewe.github.io"
+                href="https://github.com/simoewe/Trendalyze.git"
                 target="_blank"
                 rel="noreferrer"
               >

@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import Library from "./Library";
 import { getApiBase } from "../utils/apiBase";
-import UHHLogo from "../UHH_Logo.svg";
+
+const UHHLogo = `${process.env.PUBLIC_URL || ""}/UHH_Logo.png`;
 
 export default function Header({
   onPickFromLibrary,
